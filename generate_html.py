@@ -34,7 +34,7 @@ def categorize_item(sid):
     tool_map = {
         'brush': '挤奶工具', 'shears': '采摘工具', 'hatchet': '伐木工具',
         'hammer': '奶酪锻造工具', 'chisel': '制作工具', 'needle': '缝纫工具',
-        'pot': '烹饪工具', 'spatula': '冲泡工具', 'alembic': '炼金工具',
+        'spatula': '烹饪工具', 'pot': '冲泡工具', 'alembic': '炼金工具',
         'enhancer': '强化工具',
     }
     for suffix, cat in tool_map.items():
@@ -169,6 +169,18 @@ h2 { font-size:16px; margin:10px 0 8px; color:var(--text-muted); }
 .btn-icon { padding:6px 10px; font-size:16px; line-height:1; }
 .connection-status { font-size:12px; color:var(--text-muted); padding:2px 8px; border-radius:3px; background:var(--conn-bg); }
 
+/* Global Buff */
+.global-buff-section { padding:8px 20px 0 20px; }
+.global-buff-section h3 { font-size:13px; font-weight:600; margin:0 0 6px 0; color:var(--text-muted); display:flex; align-items:center; gap:6px; }
+.global-buff-hint { font-size:11px; color:var(--text-faint); font-weight:400; cursor:help; }
+.global-buff-hint::before { content:'ℹ'; display:inline-block; width:14px; height:14px; line-height:14px; text-align:center; border:1px solid var(--border); border-radius:50%; }
+.global-buff-bar { display:flex; flex-wrap:wrap; gap:14px; align-items:center; }
+.global-buff-item { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border:1px solid var(--border); border-radius:4px; background:var(--conn-bg); font-size:12px; color:var(--text); cursor:pointer; }
+.global-buff-item .global-buff-icon { width:18px; height:18px; flex:0 0 auto; vertical-align:middle; }
+.global-buff-item input { width:48px; padding:2px 6px; border:1px solid var(--border); border-radius:3px; background:var(--input-bg); color:var(--text); font-size:12px; text-align:center; }
+.global-buff-item input:focus { outline:none; border-color:var(--accent); }
+.global-buff-item .global-buff-unit { color:var(--text-faint); font-size:11px; }
+
 /* Trial Config */
 .trial-section { padding:10px 20px; }
 .trial-cards { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
@@ -299,6 +311,12 @@ const I18N = {
     importSuccess:'导入成功', importFailed:'未找到有效数据',
     teamWork:'团队工作能力', nextClearNeeds:'下1次还需', pts:'点', perSec:'点/秒',
     trial:'试炼', language:'中/EN', theme:'🌙',
+    globalBuffs:'全局加成',
+    globalBuffsTip:'手动输入你所在服务器/账号的社区大厅全局 buff 等级：0 = 无 buff，1~20 级启用。加成 = 19.5 + 等级×0.5（%），仅本地保存，每个玩家按自己实际情况填。',
+    buffGathering:'采集数量', buffGatheringTip:'仅对采集类技能（挤奶/采摘/伐木）的双倍产出概率生效；0=无，1~20 级，加成 = 19.5 + 等级×0.5（%）。',
+    buffProduction:'生产效率', buffProductionTip:'仅对生产类技能（奶酪锻造/制作/缝纫/烹饪/冲泡/炼金）的效率生效；0=无，1~20 级，加成 = 19.5 + 等级×0.5（%）。',
+    buffEnhancingSpeed:'强化速度', buffEnhancingSpeedTip:'仅对强化技能的动作速度生效；0=无，1~20 级，加成 = 19.5 + 等级×0.5（%）。',
+    levelUnit:'级',
     skillLabels:['挤奶','采摘','伐木','奶酪锻造','制作','缝纫','烹饪','冲泡','炼金','强化'],
     equipLabels:['主手','副手','头部','身体','手部','腿部','脚部','项链','耳环','戒指','袋子','背部','挤奶工具','采摘工具','伐木工具','奶酪锻造工具','制作工具','缝纫工具','烹饪工具','冲泡工具','炼金工具','强化工具'],
     equipShort:['主手','副手','头部','身体','手部','腿部','脚部','项链','耳环','戒指','袋子','背部','挤奶','采摘','伐木','奶酪','制作','缝纫','烹饪','冲泡','炼金','强化'],
@@ -323,6 +341,12 @@ const I18N = {
     importSuccess:'Imported successfully', importFailed:'No valid data found',
     teamWork:'Team Work', nextClearNeeds:'Next clear needs', pts:'pts', perSec:'pts/s',
     trial:'Trial', language:'中/EN', theme:'☀️',
+    globalBuffs:'Global Buffs',
+    globalBuffsTip:'Enter your server/account community-hall global buff level: 0 = none, 1~20 = active. Bonus = 19.5 + level×0.5 (%), stored locally only.',
+    buffGathering:'Gathering Qty', buffGatheringTip:'Applies only to gathering skills (Milking/Foraging/Woodcutting) as double-drop chance. 0=none, 1~20, bonus = 19.5 + level×0.5 (%).',
+    buffProduction:'Production Eff', buffProductionTip:'Applies only to production skills (Cheesesmithing/Crafting/Tailoring/Cooking/Brewing/Alchemy) as efficiency. 0=none, 1~20, bonus = 19.5 + level×0.5 (%).',
+    buffEnhancingSpeed:'Enhancing Spd', buffEnhancingSpeedTip:'Applies only to the Enhancing skill as action speed. 0=none, 1~20, bonus = 19.5 + level×0.5 (%).',
+    levelUnit:'lv',
     skillLabels:['Milking','Foraging','Woodcutting','Cheesesmithing','Crafting','Tailoring','Cooking','Brewing','Alchemy','Enhancing'],
     equipLabels:['Main Hand','Off Hand','Head','Body','Hands','Legs','Feet','Necklace','Earring','Ring','Pouch','Back','Milking Tool','Foraging Tool','Woodcutting Tool','Cheesesmithing Tool','Crafting Tool','Tailoring Tool','Cooking Tool','Brewing Tool','Alchemy Tool','Enhancing Tool'],
     equipShort:['MH','OH','Head','Body','Hands','Legs','Feet','Neck','Ear','Ring','Bag','Back','Milk','Forage','Wood','Cheese','Craft','Tailor','Cook','Brew','Alch','Enh'],
@@ -338,6 +362,16 @@ const SKILL_KEYS = ['milking','foraging','woodcutting','cheesesmithing','craftin
 const EQUIP_TYPES = ['主手','副手','头部','身体','手部','腿部','脚部','项链','耳环','戒指','袋子','背部','挤奶工具','采摘工具','伐木工具','奶酪锻造工具','制作工具','缝纫工具','烹饪工具','冲泡工具','炼金工具','强化工具'];
 const TOOL_SKILL_MAP = {'挤奶工具':'milking','采摘工具':'foraging','伐木工具':'woodcutting','奶酪锻造工具':'cheesesmithing','制作工具':'crafting','缝纫工具':'tailoring','烹饪工具':'cooking','冲泡工具':'brewing','炼金工具':'alchemy','强化工具':'enhancing'};
 const ITEM_LOCATION_TO_SLOT = {'/item_locations/main_hand':'主手','/item_locations/two_hand':'主手','/item_locations/off_hand':'副手','/item_locations/head':'头部','/item_locations/body':'身体','/item_locations/hands':'手部','/item_locations/legs':'腿部','/item_locations/feet':'脚部','/item_locations/neck':'项链','/item_locations/earrings':'耳环','/item_locations/ring':'戒指','/item_locations/pouch':'袋子','/item_locations/back':'背部','/item_locations/milking_tool':'挤奶工具','/item_locations/foraging_tool':'采摘工具','/item_locations/woodcutting_tool':'伐木工具','/item_locations/cheesesmithing_tool':'奶酪锻造工具','/item_locations/crafting_tool':'制作工具','/item_locations/tailoring_tool':'缝纫工具','/item_locations/cooking_tool':'烹饪工具','/item_locations/brewing_tool':'冲泡工具','/item_locations/alchemy_tool':'炼金工具','/item_locations/enhancing_tool':'强化工具'};
+const GATHERING_SKILL_IDS = new Set(['milking','foraging','woodcutting']);
+const PRODUCTION_SKILL_IDS = new Set(['cheesesmithing','crafting','tailoring','cooking','brewing','alchemy']);
+// 全局 BUFF（参考 Enhancelator main.js 的 enhancing_buff）：0 = 无 buff；1~20 级启用。
+// 加成% = 19.5 + 等级×0.5（与 MWI 社区大厅 buff 一致）；转小数乘数时 /100。
+const GLOBAL_BUFF_BASE = 19.5;
+const GLOBAL_BUFF_PER_LEVEL = 0.5;
+function globalBuffPct(lv) {
+  lv = Number(lv) || 0;
+  return lv > 0 ? (GLOBAL_BUFF_BASE + GLOBAL_BUFF_PER_LEVEL * lv) : 0;
+}
 const TRIAL_DURATION = 3600, START_LV = 100, LV_PER_PASS = 10, COUNT_INFLATION = 0.01;
 const BASE_ACTION_SEC = 10, SUCCESS_BASE = 0.80, SUCCESS_BELOW = 0.01, SUCCESS_ABOVE = 0.005, SUCCESS_MIN = 0.05;
 const BASE_TOTAL_PT = 40000, PT_GROWTH = 4000, MAX_PASS_GUARD = 10000, NUM_TRIALS = 4;
@@ -355,8 +389,9 @@ let state = {
   result: null,
   binId: null,
   encKey: null,
-  pwd: '',
-  isShared: false
+  isShared: false,
+  deletedIds: [],
+  globalBuffs: { gathering: 0, production: 0, enhancingSpeed: 0 }
 };
 let pickerState = { memberId:null, slot:null, iconId:null, enhance:0 };
 
@@ -384,6 +419,20 @@ function computeMemberBonuses(equipment) {
   return b;
 }
 
+// 把 state.globalBuffs 的等级换算成加成，叠到 combined 上。仅对相应技能分类生效。
+function addGlobalBuffsToCombined(combined, skillId) {
+  const gb = state.globalBuffs || {};
+  if (GATHERING_SKILL_IDS.has(skillId)) {
+    combined.gatheringBonus += globalBuffPct(gb.gathering) / 100;
+  }
+  if (PRODUCTION_SKILL_IDS.has(skillId)) {
+    combined.efficiencyBonus += globalBuffPct(gb.production) / 100;
+  }
+  if (skillId === 'enhancing') {
+    combined.speedBonus += globalBuffPct(gb.enhancingSpeed) / 100;
+  }
+}
+
 function successRate(personLv, targetLv, successBonus) {
   const delta = personLv - targetLv;
   const adj = delta >= 0 ? SUCCESS_ABOVE*delta : SUCCESS_BELOW*delta;
@@ -395,6 +444,8 @@ function computePersonSkillMetrics(person, skillIdx) {
   const bonuses = computeMemberBonuses(person.equipment);
   const skillId = SKILL_KEYS[skillIdx];
   const b = bonuses[skillId];
+  // 手动输入的全局 buff：按技能分类叠加相应比例
+  addGlobalBuffsToCombined(b, skillId);
   const baseLevel = Number(person.levels[skillIdx]||0);
   const effLevel = Math.max(0, baseLevel + (b.skillLevelBonus||0));
   const actionSeconds = BASE_ACTION_SEC / Math.max(0.05, 1+(b.speedBonus||0));
@@ -560,6 +611,24 @@ function updateStaticText() {
   const connEl = document.getElementById('conn-status');
   if (!state.isShared) connEl.textContent = t('offlineMode');
   else connEl.textContent = t('connected')+': '+state.guild;
+  // 全局 buff 文案 + 提示 + 回填输入
+  const gbTitle = document.getElementById('h3-global-buff');
+  if (gbTitle) gbTitle.firstChild.textContent = t('globalBuffs') + ' ';
+  const gbHint = document.getElementById('global-buff-hint');
+  if (gbHint) gbHint.title = t('globalBuffsTip');
+  const gbMap = [
+    ['gathering',       'buffGathering',      'buffGatheringTip'],
+    ['production',      'buffProduction',     'buffProductionTip'],
+    ['enhancingSpeed',  'buffEnhancingSpeed', 'buffEnhancingSpeedTip'],
+  ];
+  for (const [k, lblKey, tipKey] of gbMap) {
+    const l = document.getElementById('gb-lbl-'+k); if (l) l.textContent = t(lblKey);
+    const u = document.getElementById('gb-unit-'+k); if (u) u.textContent = t('levelUnit');
+    const inp = document.getElementById('gb-input-'+k);
+    const item = inp && inp.parentElement;
+    if (item) item.title = t(tipKey);
+  }
+  syncGlobalBuffInputs();
 }
 
 function renderTrialCards() {
@@ -659,12 +728,48 @@ function toggleLang() {
   try { localStorage.setItem('mwi_lang', state.lang); } catch(e) {}
   renderAll();
 }
+function updateGlobalBuff(key, val) {
+  if (!state.globalBuffs) state.globalBuffs = { gathering:0, production:0, enhancingSpeed:0 };
+  const n = Math.max(0, Math.floor(Number(val) || 0));
+  state.globalBuffs[key] = n;
+  try { localStorage.setItem('mwi_global_buffs', JSON.stringify(state.globalBuffs)); } catch(e) {}
+  // 已经有过一次分配 → 用新加成重算；没有分配也刷新一下成员表以便未来渲染时能反映
+  if (state.members && state.members.length > 0 && state.result) {
+    calculate();
+  } else {
+    renderMemberTable();
+    renderSummary();
+  }
+  syncGlobalBuffInputs();
+}
+function syncGlobalBuffInputs() {
+  const gb = state.globalBuffs || { gathering:0, production:0, enhancingSpeed:0 };
+  const map = { gathering:'gb-input-gathering', production:'gb-input-production', enhancingSpeed:'gb-input-enhancingSpeed' };
+  for (const k in map) {
+    const el = document.getElementById(map[k]);
+    if (el && el !== document.activeElement) el.value = Number(gb[k] || 0);
+  }
+}
+
 function loadPrefs() {
   try {
     const lang = localStorage.getItem('mwi_lang');
     if (lang === 'en' || lang === 'zh') state.lang = lang;
     const theme = localStorage.getItem('mwi_theme');
     if (theme === 'dark' || theme === 'light') state.theme = theme;
+    const rawGB = localStorage.getItem('mwi_global_buffs');
+    if (rawGB) {
+      try {
+        const obj = JSON.parse(rawGB);
+        if (obj && typeof obj === 'object') {
+          state.globalBuffs = {
+            gathering:      Math.max(0, Number(obj.gathering)      || 0),
+            production:     Math.max(0, Number(obj.production)     || 0),
+            enhancingSpeed: Math.max(0, Number(obj.enhancingSpeed) || 0),
+          };
+        }
+      } catch(e) {}
+    }
   } catch(e) {}
   document.documentElement.setAttribute('data-theme', state.theme);
 }
@@ -801,6 +906,7 @@ function addMember() {
 }
 function removeMember(id) {
   state.members = state.members.filter(p => p.id !== id);
+  if (!state.deletedIds.includes(id)) state.deletedIds.push(id);
   renderMemberTable();
   renderSummary();
   saveData();
@@ -867,7 +973,7 @@ function importJson() {
   input.onchange = () => {
     const file = input.files[0]; if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       let membersData;
       try {
         membersData = JSON.parse(reader.result);
@@ -881,12 +987,22 @@ function importJson() {
         const m = parseMemberFromProfile(profile);
         if (m) {
           m.id = newMembers.length > 0 ? newMembers[newMembers.length-1].id + 1 : 0;
+          m._ts = Date.now();   // 标记为最新，避免被旧共享 bin 数据在合并时覆盖
           newMembers.push(m);
         }
       }
       if (newMembers.length > 0) {
         state.members = newMembers;
-        renderAll(); saveData();
+        state.deletedIds = [];
+        const data = JSON.stringify({ guild: state.guild, members: state.members, trials: state.trials, deletedIds: state.deletedIds });
+        try { localStorage.setItem(getStorageKey(), data); } catch(e) {}
+        if (state.isShared && state.binId && state.encKey) {
+          await forcePushToBin(data);   // 立即全量覆盖 bin，不走合并，防止被旧数据覆盖
+        } else {
+          saveData();
+        }
+        renderAll();
+        if (state.members.length > 0) calculate();
         alert(t('importSuccess')+': '+newMembers.length);
       } else {
         alert(t('importFailed'));
@@ -901,20 +1017,22 @@ function importJson() {
 // === Data Persistence ===
 function getStorageKey() { return 'mwi_trial_'+(state.guild||'default'); }
 function saveData() {
-  const data = JSON.stringify({ guild:state.guild, members:state.members, trials:state.trials });
+  const data = JSON.stringify({ guild:state.guild, members:state.members, trials:state.trials, deletedIds:state.deletedIds });
   try { localStorage.setItem(getStorageKey(), data); } catch(e) {}
   if (state.isShared && state.binId && state.encKey) saveToBin(data);
 }
 function loadData() {
   try {
     const raw = localStorage.getItem(getStorageKey());
-    if (raw) { Object.assign(state, JSON.parse(raw)); return true; }
+    if (raw) { Object.assign(state, JSON.parse(raw)); if (!Array.isArray(state.deletedIds)) state.deletedIds = []; return true; }
   } catch(e) {}
   return false;
 }
 
 // === jsonbin.io ===
 const BIN_BASE = 'https://api.jsonbin.io/v3/b';
+// 固定的分享加密密码：历史 bin 均用此密码加密，保留以保证兼容现有数据，且不写入分享 URL
+const SHARE_PASSWORD = 'layu';
 let saveTimer = null;
 let isSaving = false;
 function saveToBin(data) {
@@ -951,32 +1069,51 @@ function saveToBin(data) {
       // Sync merged result back to local state (picks up others' changes)
       state.members = merged.members;
       state.trials = merged.trials;
+      state.deletedIds = merged.deletedIds || [];
     } catch(e) { console.error('Save failed:', e); }
     isSaving = false;
   }, 2000);
 }
+// 导入等场景：立即全量覆盖 bin，不做合并，确保本地数据成为权威版本，避免被旧数据覆盖
+async function forcePushToBin(data) {
+  try {
+    clearTimeout(saveTimer);
+    const mk = localStorage.getItem('mwi_master_key') || '';
+    const rec = await encryptRecord(data, state.encKey);
+    const pHeaders = { 'Content-Type':'application/json' };
+    if (mk) pHeaders['X-Master-Key'] = mk;
+    await fetch(BIN_BASE+'/'+state.binId, { method:'PUT', headers:pHeaders, body: JSON.stringify(rec) });
+    const parsed = JSON.parse(data);
+    state.members = parsed.members;
+    state.trials = parsed.trials;
+    state.deletedIds = parsed.deletedIds || [];
+  } catch(e) { console.error('Force push failed:', e); }
+}
 
 function mergeState(local, remote) {
   if (!remote || !remote.members) return local;
-  // Build remote member map
+  // 合并删除标记（墓碑），确保某端删除的成员不会在合并时被远端重新加回
+  const del = new Set([...(local.deletedIds||[]), ...(remote.deletedIds||[])]);
+  const localMembers = local.members.filter(p => !del.has(p.id));
+  // Build remote member map (排除已删除)
   const rMap = {};
-  remote.members.forEach(p => { rMap[p.id] = p; });
+  remote.members.forEach(p => { if (!del.has(p.id)) rMap[p.id] = p; });
   // Merge: for each local member, if remote has newer _ts, take remote
-  const mergedMembers = local.members.map(p => {
+  const mergedMembers = localMembers.map(p => {
     const r = rMap[p.id];
     if (r && r._ts && (!p._ts || r._ts > p._ts)) return r;
     return p;
   });
-  // Add remote members not present locally (added by others)
-  const localIds = new Set(local.members.map(p => p.id));
-  remote.members.forEach(p => { if (!localIds.has(p.id)) mergedMembers.push(p); });
+  // Add remote members not present locally (added by others)，且非已删除
+  const localIds = new Set(localMembers.map(p => p.id));
+  remote.members.forEach(p => { if (!localIds.has(p.id) && !del.has(p.id)) mergedMembers.push(p); });
   // Merge trials by _ts
   const mergedTrials = local.trials.map((trial, i) => {
     const r = remote.trials && remote.trials[i];
     if (r && r._ts && (!trial._ts || r._ts > trial._ts)) return r;
     return trial;
   });
-  return { guild: local.guild || remote.guild, members: mergedMembers, trials: mergedTrials };
+  return { guild: local.guild || remote.guild, members: mergedMembers, trials: mergedTrials, deletedIds: [...del] };
 }
 async function loadFromBin() {
   try {
@@ -992,6 +1129,7 @@ async function loadFromBin() {
       const dec = await decryptRecord(json.record, state.encKey);
       const data = JSON.parse(dec);
       Object.assign(state, data);
+      if (!Array.isArray(state.deletedIds)) state.deletedIds = [];
       return true;
     }
   } catch(e) { console.error('Load failed:', e); }
@@ -999,7 +1137,7 @@ async function loadFromBin() {
 }
 async function createBin(guild, password, masterKey) {
   const encKey = await deriveKey(password, guild);
-  const data = JSON.stringify({ guild, members: state.members, trials: state.trials });
+  const data = JSON.stringify({ guild, members: state.members, trials: state.trials, deletedIds: state.deletedIds });
   const rec = await encryptRecord(data, encKey);
   const resp = await fetch(BIN_BASE, {
     method:'POST',
@@ -1087,7 +1225,6 @@ function openShareDialog() {
   overlay.innerHTML = '<div class="modal-dialog" style="max-width:440px">'+
     '<div class="modal-title"><span>'+t('share')+'</span><button class="modal-close" onclick="closeShareDialog()">&times;</button></div>'+
     '<div class="share-field"><label>'+t('guildName')+'</label><input type="text" id="share-guild" value="'+escHtml(state.guild)+'" placeholder="MWI"></div>'+
-    '<div class="share-field"><label>'+t('password')+'</label><input type="text" id="share-password" placeholder="***"></div>'+
     '<div class="share-field"><label>'+t('masterKey')+'</label><input type="text" id="share-masterkey" value="'+escHtml(storedKey)+'" placeholder="jsonbin.io"></div>'+
     '<div style="font-size:11px;color:var(--text-muted);margin:8px 0">'+t('shareHint')+'</div>'+
     (state.binId ? '<div class="share-field"><label>'+t('currentUrl')+'</label><div class="share-url" onclick="copyShareUrl()">'+escHtml(getShareUrl())+'</div></div>' : '')+
@@ -1103,9 +1240,8 @@ function getShareUrl() {
   const url = new URL(window.location.href);
   url.searchParams.set('guild', state.guild);
   url.searchParams.set('bin', state.binId);
-  if (state.pwd) url.searchParams.set('pwd', state.pwd);
-  const mk = localStorage.getItem('mwi_master_key');
-  if (mk) url.searchParams.set('mk', mk);
+  // 密码已固定为常量 SHARE_PASSWORD，不写入 URL（现有 bin 兼容）
+  // if (mk) url.searchParams.set('mk', mk);
   return url.toString();
 }
 function copyShareUrl() {
@@ -1113,17 +1249,15 @@ function copyShareUrl() {
 }
 async function createShare() {
   const guild = document.getElementById('share-guild').value.trim();
-  const password = document.getElementById('share-password').value.trim();
   const masterKey = document.getElementById('share-masterkey').value.trim();
-  if (!guild || !password || !masterKey) { alert(t('fillAll')); return; }
+  if (!guild || !masterKey) { alert(t('fillAll')); return; }
   try {
     localStorage.setItem('mwi_master_key', masterKey);
     state.guild = guild;
-    const binId = await createBin(guild, password, masterKey);
+    const binId = await createBin(guild, SHARE_PASSWORD, masterKey);
     if (!binId) { alert(t('createFailed')); return; }
     state.binId = binId;
-    state.encKey = await deriveKey(password, guild);
-    state.pwd = password;
+    state.encKey = await deriveKey(SHARE_PASSWORD, guild);
     state.isShared = true;
     saveData();
     closeShareDialog();
@@ -1160,19 +1294,12 @@ async function init() {
   const params = new URLSearchParams(window.location.search);
   const guild = params.get('guild');
   const bin = params.get('bin');
-  const pwd = params.get('pwd');
   const mk = params.get('mk');
   if (mk) localStorage.setItem('mwi_master_key', mk);
   if (guild && bin) {
     state.guild = guild; state.binId = bin; state.isShared = true;
-    let loadedFromShare = false;
-    if (pwd) {
-      state.pwd = pwd;
-      state.encKey = await deriveKey(pwd, guild);
-      loadedFromShare = await loadFromBin();
-    } else {
-      loadedFromShare = await loadFromBin();
-    }
+    state.encKey = await deriveKey(SHARE_PASSWORD, guild);
+    let loadedFromShare = await loadFromBin();
     updateConnectionStatus();
     if (!state.trials) state.trials = [{skill:0,max:20},{skill:1,max:20},{skill:2,max:20},{skill:3,max:20}];
     renderAll();
@@ -1216,6 +1343,30 @@ __SVG_SYMBOLS__
     <button class="btn" id="btn-import-json" onclick="importJson()">导入</button>
     <a href="mwi_data_export.user.js" download class="btn btn-sm" id="export-script-link" style="font-size:12px;padding:4px 8px;opacity:.6" title="">📦</a>
     <button class="btn btn-primary" id="btn-calculate" onclick="calculate()">计算最优分配</button>
+  </div>
+</div>
+
+<div class="global-buff-section">
+  <h3 id="h3-global-buff">全局加成 <span class="global-buff-hint" id="global-buff-hint" title=""></span></h3>
+  <div class="global-buff-bar">
+    <label class="global-buff-item" title="">
+      <svg class="global-buff-icon" viewBox="0 0 40 40"><use xlink:href="#gathering"></use></svg>
+      <span class="global-buff-label" id="gb-lbl-gathering">采集数量</span>
+      <input type="number" min="0" max="20" step="1" id="gb-input-gathering" onchange="updateGlobalBuff('gathering', this.value)">
+      <span class="global-buff-unit" id="gb-unit-gathering">级</span>
+    </label>
+    <label class="global-buff-item" title="">
+      <svg class="global-buff-icon" viewBox="0 0 40 40"><use xlink:href="#efficiency"></use></svg>
+      <span class="global-buff-label" id="gb-lbl-production">生产效率</span>
+      <input type="number" min="0" max="20" step="1" id="gb-input-production" onchange="updateGlobalBuff('production', this.value)">
+      <span class="global-buff-unit" id="gb-unit-production">级</span>
+    </label>
+    <label class="global-buff-item" title="">
+      <svg class="global-buff-icon" viewBox="0 0 40 40"><use xlink:href="#action_speed"></use></svg>
+      <span class="global-buff-label" id="gb-lbl-enhancingSpeed">强化速度</span>
+      <input type="number" min="0" max="20" step="1" id="gb-input-enhancingSpeed" onchange="updateGlobalBuff('enhancingSpeed', this.value)">
+      <span class="global-buff-unit" id="gb-unit-enhancingSpeed">级</span>
+    </label>
   </div>
 </div>
 
@@ -1313,8 +1464,23 @@ def main():
         else:
             print(f'  WARNING: could not extract symbol for {sid}')
 
-    # Combine: skill icons first, then equipment icons
-    all_symbols = skill_symbols + equip_symbols
+    # Read buffs_sprite.svg for global buff icons (gathering / efficiency / action_speed)
+    buffs_sprite_path = os.path.join(BASE_DIR, 'buffs_sprite.svg')
+    buff_symbols = []
+    if os.path.exists(buffs_sprite_path):
+        with open(buffs_sprite_path, 'r', encoding='utf-8') as f:
+            buff_content = f.read()
+        for bid in ['gathering', 'efficiency', 'action_speed']:
+            sym = extract_symbol(buff_content, bid)
+            if sym:
+                buff_symbols.append(sym)
+            else:
+                print(f'  WARNING: buff symbol not found: {bid}')
+    else:
+        print('WARNING: buffs_sprite.svg not found, global buff icons will be missing')
+
+    # Combine: skill icons, equipment icons, then buff icons
+    all_symbols = skill_symbols + equip_symbols + buff_symbols
     svg_block = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="display:none">\n' + '\n'.join(all_symbols) + '\n</svg>'
 
     # Build EQUIP_ICONS JS
