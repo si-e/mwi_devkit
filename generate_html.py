@@ -12,6 +12,15 @@ if os.path.exists(ITEM_NAME_MAP_PATH):
     with open(ITEM_NAME_MAP_PATH, 'r', encoding='utf-8') as f:
         ITEM_NAME_MAP = json.load(f)
 
+# 游戏数据（装备/工具/房屋/公会加成 + 游戏 client 定义），与生成逻辑分离，单独维护。
+GAME_DATA_PATH = os.path.join(BASE_DIR, 'mwi_data.json')
+GAME_DATA = {}
+if os.path.exists(GAME_DATA_PATH):
+    with open(GAME_DATA_PATH, 'r', encoding='utf-8') as f:
+        GAME_DATA = json.load(f)
+else:
+    print('WARNING: mwi_data.json not found, game data will be missing')
+
 SKILL_KEYS = ['milking','foraging','woodcutting','cheesesmithing','crafting','tailoring','cooking','brewing','alchemy','enhancing']
 SKILL_LABELS = ['挤奶','采摘','伐木','奶酪锻造','制作','缝纫','烹饪','冲泡','炼金','强化']
 
@@ -313,6 +322,10 @@ const I18N = {
     trial:'试炼', language:'中/EN', theme:'🌙',
     globalBuffs:'全局加成',
     globalBuffsTip:'手动输入你所在服务器/账号的社区大厅全局 buff 等级：0 = 无 buff，1~20 级启用。加成 = 19.5 + 等级×0.5（%），仅本地保存，每个玩家按自己实际情况填。',
+    guildBuildings:'公会建筑', guildBuildingsTip:'生活和战斗每个技能对应一座房子，每级 +2 有效等级（仅本地保存，不影响他人，不影响试炼分配逻辑）。',
+    guildShrines:'公会神龛', guildShrinesTip:'力量每级 +0.5% 效率，节奏每级 +0.5% 行动速度，建造者殿堂每级 +2% 公会代币（仅本地保存）。',
+    buildingLabels:['挤奶','采摘','伐木','奶酪锻造','制作','缝纫','烹饪','冲泡','炼金','强化','耐力','智力','攻击','防御','近战','远程','魔法'],
+    shrineLabels:['力量','节奏','建造者殿堂'],
     buffGathering:'采集数量', buffGatheringTip:'仅对采集类技能（挤奶/采摘/伐木）的双倍产出概率生效；0=无，1~20 级，加成 = 19.5 + 等级×0.5（%）。',
     buffProduction:'生产效率', buffProductionTip:'仅对生产类技能（奶酪锻造/制作/缝纫/烹饪/冲泡/炼金）的效率生效；0=无，1~20 级，加成 = 19.5 + 等级×0.5（%）。',
     buffEnhancingSpeed:'强化速度', buffEnhancingSpeedTip:'仅对强化技能的动作速度生效；0=无，1~20 级，加成 = 19.5 + 等级×0.5（%）。',
@@ -343,6 +356,10 @@ const I18N = {
     trial:'Trial', language:'中/EN', theme:'☀️',
     globalBuffs:'Global Buffs',
     globalBuffsTip:'Enter your server/account community-hall global buff level: 0 = none, 1~20 = active. Bonus = 19.5 + level×0.5 (%), stored locally only.',
+    guildBuildings:'Guild Buildings', guildBuildingsTip:'Each skill has a house; every level gives +2 effective levels (stored locally only, does not affect others or assignment).',
+    guildShrines:'Guild Shrines', guildShrinesTip:'Power: +0.5% efficiency/level. Tempo: +0.5% action speed/level. Builder Hall: +2% guild tokens/level (stored locally only).',
+    buildingLabels:['Milking','Foraging','Woodcutting','Cheesesmithing','Crafting','Tailoring','Cooking','Brewing','Alchemy','Enhancing','Stamina','Intelligence','Attack','Defense','Melee','Ranged','Magic'],
+    shrineLabels:['Power','Tempo','Builder Hall'],
     buffGathering:'Gathering Qty', buffGatheringTip:'Applies only to gathering skills (Milking/Foraging/Woodcutting) as double-drop chance. 0=none, 1~20, bonus = 19.5 + level×0.5 (%).',
     buffProduction:'Production Eff', buffProductionTip:'Applies only to production skills (Cheesesmithing/Crafting/Tailoring/Cooking/Brewing/Alchemy) as efficiency. 0=none, 1~20, bonus = 19.5 + level×0.5 (%).',
     buffEnhancingSpeed:'Enhancing Spd', buffEnhancingSpeedTip:'Applies only to the Enhancing skill as action speed. 0=none, 1~20, bonus = 19.5 + level×0.5 (%).',
@@ -372,6 +389,9 @@ function globalBuffPct(lv) {
   lv = Number(lv) || 0;
   return lv > 0 ? (GLOBAL_BUFF_BASE + GLOBAL_BUFF_PER_LEVEL * lv) : 0;
 }
+// __GAME_DATA_PLACEHOLDER__
+
+// === 算法常量 ===
 const TRIAL_DURATION = 3600, START_LV = 100, LV_PER_PASS = 10, COUNT_INFLATION = 0.01;
 const BASE_ACTION_SEC = 10, SUCCESS_BASE = 0.80, SUCCESS_BELOW = 0.01, SUCCESS_ABOVE = 0.005, SUCCESS_MIN = 0.05;
 const BASE_TOTAL_PT = 40000, PT_GROWTH = 4000, MAX_PASS_GUARD = 10000, NUM_TRIALS = 4;
@@ -391,11 +411,44 @@ let state = {
   encKey: null,
   isShared: false,
   deletedIds: [],
-  globalBuffs: { gathering: 0, production: 0, enhancingSpeed: 0 }
+  globalBuffs: { gathering: 0, production: 0, enhancingSpeed: 0 },
+  guildBuildings: GUILD_BUILDING_KEYS.reduce((o,k)=>(o[k]=0,o),{}),
+  guildShrines: { power:0, tempo:0, builder:0 }
 };
 let pickerState = { memberId:null, slot:null, iconId:null, enhance:0 };
 
 // === Algorithm ===
+
+function getEnhancementBonusPercent(enhLevel, slot) {
+  const lv = Math.max(0, Math.floor(Number(enhLevel) || 0));
+  const clamped = lv > ENH_BONUS_PERCENT_TABLE.length - 1
+    ? ENH_BONUS_PERCENT_TABLE[ENH_BONUS_PERCENT_TABLE.length - 1]
+    : ENH_BONUS_PERCENT_TABLE[lv];
+  return ACCESSORY_ENH_SLOTS.has(String(slot)) ? clamped * 5 : clamped;
+}
+
+// 把按 stat key 累加的装备 totals，分配到按技能聚合的加成结构 b[skillId]。
+function applyEquipStatTotals(b, totals) {
+  for (const k in totals) {
+    const v = totals[k];
+    if (!Number.isFinite(v) || v === 0) continue;
+    if (k === 'skillingSpeed') { for (const s of SKILL_KEYS) b[s].speedBonus += v; continue; }
+    if (k === 'skillingEfficiency') { for (const s of SKILL_KEYS) b[s].efficiencyBonus += v; continue; }
+    if (k === 'gatheringQuantity') { for (const s of SKILL_KEYS) if (GATHERING_SKILL_IDS.has(s)) b[s].gatheringBonus += v; continue; }
+    // {skillId}Speed / Efficiency / Success / Level
+    for (const s of SKILL_KEYS) {
+      if (k.startsWith(s)) {
+        const suffix = k.slice(s.length);
+        if (suffix === 'Speed') b[s].speedBonus += v;
+        else if (suffix === 'Efficiency') b[s].efficiencyBonus += v;
+        else if (suffix === 'Success') b[s].successBonus += v;
+        else if (suffix === 'Level') b[s].skillLevelBonus += v;
+        break;
+      }
+    }
+  }
+}
+
 function computeMemberBonuses(equipment) {
   const b = {};
   for (const k of SKILL_KEYS) b[k] = {speedBonus:0,efficiencyBonus:0,successBonus:0,gatheringBonus:0,skillLevelBonus:0};
@@ -403,6 +456,45 @@ function computeMemberBonuses(equipment) {
   for (const [slot, eq] of Object.entries(equipment)) {
     if (!eq || (!eq.iconId && !(eq.enhance > 0))) continue;
     const L = eq.enhance || 0;
+    const iconId = eq.iconId || '';
+    // 命中固定基础加成表：按真实装备身份精确计算（0 级基础值 × 强化系数 × 物品倍率）
+    const effectiveName = iconId.endsWith('_refined') ? iconId.slice(0, -'_refined'.length) : iconId;
+    const cfg = EQUIPMENT_BASE_BONUSES['/items/' + effectiveName];
+    if (cfg && cfg.base) {
+      const enhPct = getEnhancementBonusPercent(L, slot);
+      const isBack = (slot === '背部');
+      const itemMult = (iconId.endsWith('_refined') ? 1.08 : 1) * (isBack ? 1.16 : 1);
+      const totals = {};
+      for (const [k, baseVal] of Object.entries(cfg.base)) {
+        const v = Number(baseVal) * (1 + enhPct) * itemMult;
+        if (!Number.isFinite(v) || v === 0) continue;
+        totals[k] = (totals[k] || 0) + v;
+      }
+      applyEquipStatTotals(b, totals);
+      continue;
+    }
+    // 未命中固定表：先试生活工具 前缀_后缀 精确加成；再退回到按槽位类型的近似公式（不回归）
+    const toolRaw = String(iconId).replace('/items/','');
+    const toolRefined = toolRaw.endsWith('_refined');
+    const toolName = toolRefined ? toolRaw.slice(0, -'_refined'.length) : toolRaw;
+    const uidx = toolName.lastIndexOf('_');
+    if (uidx > 0) {
+      const prefix = toolName.slice(0, uidx);
+      const suffix = toolName.slice(uidx + 1);
+      const basePct = suffix === 'enhancer' ? (ENHANCER_PREFIX_BONUS[prefix]||0) : (TOOL_PREFIX_BONUS[prefix]||0);
+      const statKey = TOOL_SUFFIX_SKILL[suffix];
+      if (basePct && statKey) {
+        const enhPct = getEnhancementBonusPercent(L, slot);
+        const isBack = (slot === '背部');
+        const itemMult = (toolRefined ? 1.08 : 1) * (isBack ? 1.16 : 1);
+        const v = basePct * (1 + enhPct) * itemMult;
+        const targetSkill = statKey.replace(/Speed$|Efficiency$|Success$/, '');
+        const field = statKey.endsWith('Speed') ? 'speedBonus' : statKey.endsWith('Efficiency') ? 'efficiencyBonus' : 'successBonus';
+        b[targetSkill][field] += v;
+        continue;
+      }
+    }
+    // 槽位类型近似公式（工具给单技能、防具给全技能微加成）
     const skill = TOOL_SKILL_MAP[slot];
     if (skill) {
       b[skill].speedBonus += L*0.025;
@@ -417,6 +509,222 @@ function computeMemberBonuses(equipment) {
     }
   }
   return b;
+}
+
+// === 成就 / 房屋 / 公会 加成（迁移自 Chen19970809/MWI_Trial_Calculator）===
+// 读取单个 buff 对象的数值，兼容多种字段名。
+function readBuffAmount(b) {
+  const keys = ['ratioBoost','flatBoost','value','amount','bonus','boost','boostRatio','ratioBoostLevelBonus','flatBoostLevelBonus','levelBonus'];
+  let sum = 0;
+  for (const k of keys) {
+    const v = b[k];
+    if (typeof v === 'number' && Number.isFinite(v)) sum += v;
+    else if (typeof v === 'string') { const n = Number(v); if (!Number.isNaN(n)) sum += n; }
+  }
+  return sum;
+}
+
+// 累加 actionTypeBuffsDict 中 /action_types/<skillId> 的全部 buff（Trial Core 口径）。
+function accumulateActionTypeBuffs(dict, skillId) {
+  const out = { speedBonus:0, efficiencyBonus:0, successBonus:0, gatheringBonus:0, skillLevelBonus:0 };
+  if (!dict || typeof dict !== 'object') return out;
+  const actionTypeHrid = '/action_types/' + skillId;
+  const buffs = dict[actionTypeHrid] || dict[skillId];
+  if (!Array.isArray(buffs)) return out;
+  const isGathering = GATHERING_SKILL_IDS.has(skillId);
+  const skillLevelType = '/buff_types/' + skillId + '_level';
+  const skillSuccessType = '/buff_types/' + skillId + '_success';
+  for (const b of buffs) {
+    if (!b || typeof b !== 'object') continue;
+    const amt = readBuffAmount(b);
+    if (amt === 0) continue;
+    const t = b.typeHrid || b.type || b.buffTypeHrid || b.buffType || '';
+    if      (t === skillLevelType || t === '/buff_types/skill_level') out.skillLevelBonus += amt;
+    else if (t === '/buff_types/efficiency') out.efficiencyBonus += amt;
+    else if (t === '/buff_types/action_speed' || t === '/buff_types/speed') out.speedBonus += amt;
+    else if (t === skillSuccessType || t === '/buff_types/success_rate') out.successBonus += amt;
+    else if (t === '/buff_types/gathering' && isGathering) out.gatheringBonus += amt;
+    else if (t === '/buff_types/gourmet' && PRODUCTION_SKILL_IDS.has(skillId)) out.gatheringBonus += amt;
+  }
+  return out;
+}
+
+// 成就档完成状态 → 某技能的档位 BUFF。仅 Beginner/Adept tier，且该 tier 下所有成就都完成才触发。
+function applyAchievementTierBuffs(out, achievementsValue, actionTypeHrid) {
+  if (!achievementsValue || typeof achievementsValue !== 'object' || Array.isArray(achievementsValue)) return;
+  const tierDetailMap = EMBEDDED_CLIENT_DATA && EMBEDDED_CLIENT_DATA.achievementTierDetailMap;
+  if (!tierDetailMap) return;
+  for (const tierHrid of ['/achievement_tiers/beginner', '/achievement_tiers/adept']) {
+    if (achievementsValue[tierHrid] !== true) continue;
+    const tierDetail = tierDetailMap[tierHrid];
+    if (!tierDetail || !tierDetail.buff || !tierDetail.usableInActionTypeMap || !tierDetail.usableInActionTypeMap[actionTypeHrid]) continue;
+    const b = tierDetail.buff;
+    const amt = readBuffAmount(b);
+    const t = b.typeHrid;
+    if      (t === '/buff_types/efficiency') out.efficiencyBonus += amt;
+    else if (t === '/buff_types/action_speed' || t === '/buff_types/speed') out.speedBonus += amt;
+    else if (t === '/buff_types/success_rate') out.successBonus += amt;
+    else if (t === '/buff_types/gathering') out.gatheringBonus += amt;
+    else if (t.endsWith('_level')) out.skillLevelBonus += amt;
+  }
+}
+
+// 把原始 achievements 布尔表压缩成两档完成状态 {tier: bool}。
+function computeAchievementsValue(achievements) {
+  if (!achievements || typeof achievements !== 'object' || Array.isArray(achievements)) return null;
+  const detailMap = EMBEDDED_CLIENT_DATA && EMBEDDED_CLIENT_DATA.achievementDetailMap;
+  if (!detailMap) return null;
+  const val = {}; let any = false;
+  for (const tierHrid of ['/achievement_tiers/beginner', '/achievement_tiers/adept']) {
+    let total = 0, done = 0;
+    for (const [achHrid, achDetail] of Object.entries(detailMap)) {
+      if (!achDetail || achDetail.tierHrid !== tierHrid) continue;
+      total++;
+      if (achievements[achHrid] === true) done++;
+    }
+    if (total === 0) continue;
+    val[tierHrid] = (done === total); any = true;
+  }
+  return any ? val : null;
+}
+
+// 从 person.achievementsValue / achievementActionTypeBuffsDict / achievements 提取成就对某技能的加成。
+function extractAchievementBonuses(person, skillId) {
+  const out = { speedBonus:0, efficiencyBonus:0, successBonus:0, gatheringBonus:0, skillLevelBonus:0 };
+  if (!person) return out;
+  const actionTypeHrid = '/action_types/' + skillId;
+  if (person.achievementsValue) {
+    applyAchievementTierBuffs(out, person.achievementsValue, actionTypeHrid);
+    return out;
+  }
+  if (person.achievementActionTypeBuffsDict && typeof person.achievementActionTypeBuffsDict === 'object' && !Array.isArray(person.achievementActionTypeBuffsDict)) {
+    const buffs = person.achievementActionTypeBuffsDict[actionTypeHrid] || person.achievementActionTypeBuffsDict[skillId];
+    if (Array.isArray(buffs)) {
+      for (const b of buffs) {
+        if (!b || typeof b !== 'object') continue;
+        const amt = readBuffAmount(b);
+        if (amt === 0) continue;
+        const t = b.typeHrid || b.type || b.buffTypeHrid || b.buffType || '';
+        if      (t === '/buff_types/skill_level' || t.endsWith('_level')) out.skillLevelBonus += amt;
+        else if (t === '/buff_types/efficiency') out.efficiencyBonus += amt;
+        else if (t === '/buff_types/action_speed' || t === '/buff_types/speed') out.speedBonus += amt;
+        else if (t === '/buff_types/success_rate') out.successBonus += amt;
+        else if (t === '/buff_types/gathering') out.gatheringBonus += amt;
+      }
+      return out;
+    }
+  }
+  if (EMBEDDED_CLIENT_DATA && EMBEDDED_CLIENT_DATA.achievementDetailMap && EMBEDDED_CLIENT_DATA.achievementTierDetailMap && person.achievements && typeof person.achievements === 'object' && !Array.isArray(person.achievements)) {
+    applyAchievementTierBuffs(out, computeAchievementsValue(person.achievements), actionTypeHrid);
+    return out;
+  }
+  let dict = null;
+  if (person.achievements && typeof person.achievements === 'object' && !Array.isArray(person.achievements)) {
+    const ach = person.achievements.data && typeof person.achievements.data === 'object' ? person.achievements.data : person.achievements;
+    dict = ach.achievementActionTypeBuffsDict || ach.actionTypeBuffsDict || ach;
+  }
+  if (!dict || typeof dict !== 'object' || Array.isArray(dict)) return out;
+  let buffs = dict[actionTypeHrid];
+  if (!buffs) buffs = dict[skillId];
+  if (!Array.isArray(buffs)) return out;
+  const isGathering = GATHERING_SKILL_IDS.has(skillId);
+  const skillLevelType = '/buff_types/' + skillId + '_level';
+  const skillSuccessType = '/buff_types/' + skillId + '_success';
+  for (const b of buffs) {
+    if (!b || typeof b !== 'object') continue;
+    const amt = readBuffAmount(b);
+    if (amt === 0) continue;
+    const t = b.typeHrid || b.type || b.buffTypeHrid || b.buffType || '';
+    if      (t === skillLevelType || t === '/buff_types/skill_level') out.skillLevelBonus += amt;
+    else if (t === '/buff_types/efficiency') out.efficiencyBonus += amt;
+    else if (t === '/buff_types/action_speed' || t === '/buff_types/speed') out.speedBonus += amt;
+    else if (t === skillSuccessType || t === '/buff_types/success_rate') out.successBonus += amt;
+    else if (t === '/buff_types/gathering' && isGathering) out.gatheringBonus += amt;
+  }
+  return out;
+}
+
+// 计算单个房屋 buff 在当前等级下的数值 = level × flatBoostLevelBonus。
+function computeBuffAtLevel(b, level) {
+  if (level <= 0) return 0;
+  return level * (Number(b.flatBoostLevelBonus) || 0);
+}
+
+// 从 person.houseActionTypeBuffsDict / houseRoomLevels 计算房屋加成。
+function extractHouseBuffBonuses(person, skillId) {
+  const out = { speedBonus:0, efficiencyBonus:0, successBonus:0, gatheringBonus:0, skillLevelBonus:0 };
+  if (!person) return out;
+  if (person.houseActionTypeBuffsDict && Object.keys(person.houseActionTypeBuffsDict).length > 0) {
+    return accumulateActionTypeBuffs(person.houseActionTypeBuffsDict, skillId);
+  }
+  if (EMBEDDED_CLIENT_DATA && EMBEDDED_CLIENT_DATA.houseRoomDetailMap && person.houseRoomLevels) {
+    const actionTypeHrid = '/action_types/' + skillId;
+    for (const [roomHrid, lv] of Object.entries(person.houseRoomLevels)) {
+      if (typeof lv !== 'number' || lv <= 0) continue;
+      const room = EMBEDDED_CLIENT_DATA.houseRoomDetailMap[roomHrid];
+      if (!room) continue;
+      for (const b of (room.actionBuffs || [])) {
+        let applies = b.usableInActionTypeMap && b.usableInActionTypeMap[actionTypeHrid];
+        if (!b.usableInActionTypeMap) applies = HOUSE_ROOM_SKILL_MAP[roomHrid] === actionTypeHrid;
+        if (!applies) continue;
+        const amt = computeBuffAtLevel(b, lv);
+        const t = b.typeHrid;
+        if      (t === '/buff_types/efficiency') out.efficiencyBonus += amt;
+        else if (t === '/buff_types/action_speed' || t === '/buff_types/speed') out.speedBonus += amt;
+        else if (t === '/buff_types/success_rate') out.successBonus += amt;
+        else if (t === '/buff_types/gathering') out.gatheringBonus += amt;
+        else if (t.endsWith('_level')) out.skillLevelBonus += amt;
+      }
+    }
+    return out;
+  }
+  if (!person.houseRoomLevels) return out;
+  const room = person.houseRoomLevels[skillId]
+    || person.houseRoomLevels['/house_rooms/' + skillId + '_room']
+    || person.houseRoomLevels['/house_rooms/' + skillId]
+    || person.houseRoomLevels[skillId + '_room']
+    || person.houseRoomLevels[skillId + 'Room'];
+  if (!room) return out;
+  if (typeof room === 'object') {
+    const direct = {
+      speedBonus: Number(room.speedBonus) || 0, efficiencyBonus: Number(room.efficiencyBonus) || 0,
+      successBonus: Number(room.successBonus) || 0, gatheringBonus: Number(room.gatheringBonus) || 0, skillLevelBonus: Number(room.skillLevelBonus) || 0,
+    };
+    if (direct.speedBonus || direct.efficiencyBonus || direct.successBonus || direct.gatheringBonus || direct.skillLevelBonus) return direct;
+  }
+  let lv = 0;
+  if (typeof room === 'number') lv = room;
+  else if (typeof room === 'object') {
+    if (typeof room.level === 'number') lv = room.level;
+    else if (typeof room.roomLevel === 'number') lv = room.roomLevel;
+    else if (typeof room.houseRoomLevel === 'number') lv = room.houseRoomLevel;
+  }
+  if (lv <= 0) return out;
+  out.speedBonus = lv * HOUSE_BONUS_PER_LEVEL.speed;
+  out.efficiencyBonus = lv * HOUSE_BONUS_PER_LEVEL.efficiency;
+  out.successBonus = lv * HOUSE_BONUS_PER_LEVEL.success;
+  out.gatheringBonus = lv * HOUSE_BONUS_PER_LEVEL.gathering;
+  out.skillLevelBonus = lv * HOUSE_BONUS_PER_LEVEL.skillLevel;
+  return out;
+}
+
+// 公会建筑：生活/战斗每座房子每级 +2 有效等级（仅生活技能影响试炼）。
+function applyGuildBuilding(combined, skillId) {
+  const out = { skillLevelBonus:0 };
+  const buildings = state.guildBuildings || {};
+  const lv = Math.max(0, Math.min(GUILD_BUILDING_MAX_LEVEL, Math.floor(Number(buildings[skillId]) || 0)));
+  if (lv > 0) { combined.skillLevelBonus += lv * 2; out.skillLevelBonus = lv * 2; }
+  return out;
+}
+// 公会神龛：力量 +0.5% 效率/级，节奏 +0.5% 速度/级。
+function applyGuildShrine(combined) {
+  const out = { speedBonus:0, efficiencyBonus:0 };
+  const shrines = state.guildShrines || {};
+  const power = Math.max(0, Math.min(GUILD_SHRINE_MAX_LEVEL, Math.floor(Number(shrines.power) || 0)));
+  if (power > 0) { combined.efficiencyBonus += power * 0.005; out.efficiencyBonus = power * 0.005; }
+  const tempo = Math.max(0, Math.min(GUILD_SHRINE_MAX_LEVEL, Math.floor(Number(shrines.tempo) || 0)));
+  if (tempo > 0) { combined.speedBonus += tempo * 0.005; out.speedBonus = tempo * 0.005; }
+  return out;
 }
 
 // 把 state.globalBuffs 的等级换算成加成，叠到 combined 上。仅对相应技能分类生效。
@@ -446,6 +754,14 @@ function computePersonSkillMetrics(person, skillIdx) {
   const b = bonuses[skillId];
   // 手动输入的全局 buff：按技能分类叠加相应比例
   addGlobalBuffsToCombined(b, skillId);
+  // 逐人加成：成就档 buff、房屋房间 buff（依赖导入 profile 中的对应字段）
+  const achB = extractAchievementBonuses(person, skillId);
+  b.speedBonus += achB.speedBonus; b.efficiencyBonus += achB.efficiencyBonus; b.successBonus += achB.successBonus; b.gatheringBonus += achB.gatheringBonus; b.skillLevelBonus += achB.skillLevelBonus;
+  const houseB = extractHouseBuffBonuses(person, skillId);
+  b.speedBonus += houseB.speedBonus; b.efficiencyBonus += houseB.efficiencyBonus; b.successBonus += houseB.successBonus; b.gatheringBonus += houseB.gatheringBonus; b.skillLevelBonus += houseB.skillLevelBonus;
+  // 公会建筑（有效等级）/ 公会神龛（效率/速度），本地输入项
+  applyGuildBuilding(b, skillId);
+  applyGuildShrine(b);
   const baseLevel = Number(person.levels[skillIdx]||0);
   const effLevel = Math.max(0, baseLevel + (b.skillLevelBonus||0));
   const actionSeconds = BASE_ACTION_SEC / Math.max(0.05, 1+(b.speedBonus||0));
@@ -629,6 +945,16 @@ function updateStaticText() {
     if (item) item.title = t(tipKey);
   }
   syncGlobalBuffInputs();
+  // 公会建筑 / 神龛 文案 + 提示 + 回填输入
+  const gbBTitle = document.getElementById('h3-guild-buildings');
+  if (gbBTitle) gbBTitle.firstChild.textContent = t('guildBuildings') + ' ';
+  const gbBHint = document.getElementById('guild-buildings-hint');
+  if (gbBHint) gbBHint.title = t('guildBuildingsTip');
+  const gsTitle = document.getElementById('h3-guild-shrines');
+  if (gsTitle) gsTitle.firstChild.textContent = t('guildShrines') + ' ';
+  const gsHint = document.getElementById('guild-shrines-hint');
+  if (gsHint) gsHint.title = t('guildShrinesTip');
+  syncGuildInputs();
 }
 
 function renderTrialCards() {
@@ -750,6 +1076,57 @@ function syncGlobalBuffInputs() {
     if (el && el !== document.activeElement) el.value = Number(gb[k] || 0);
   }
 }
+// 公会建筑 / 神龛：本地输入项，渲染 + 同步 + 持久化
+function renderGuildInputs() {
+  const bb = document.getElementById('guild-buildings-bar');
+  if (bb) {
+    const labels = t('buildingLabels') || GUILD_BUILDING_KEYS;
+    bb.innerHTML = GUILD_BUILDING_KEYS.map((k, i) => {
+      const lbl = labels[i] || k;
+      return '<label class="global-buff-item" title="'+escHtml(t('guildBuildingsTip'))+'">'
+        + '<span class="global-buff-label">'+escHtml(lbl)+'</span>'
+        + '<input type="number" min="0" max="'+GUILD_BUILDING_MAX_LEVEL+'" step="1" id="gb-building-input-'+k+'" onchange="updateGuildBuilding(\''+k+'\', this.value)">'
+        + '<span class="global-buff-unit">'+t('levelUnit')+'</span></label>';
+    }).join('');
+  }
+  const sb = document.getElementById('guild-shrines-bar');
+  if (sb) {
+    const labels = t('shrineLabels') || GUILD_SHRINE_KEYS;
+    sb.innerHTML = GUILD_SHRINE_KEYS.map((k, i) => {
+      const lbl = labels[i] || k;
+      return '<label class="global-buff-item" title="'+escHtml(t('guildShrinesTip'))+'">'
+        + '<span class="global-buff-label">'+escHtml(lbl)+'</span>'
+        + '<input type="number" min="0" max="'+GUILD_SHRINE_MAX_LEVEL+'" step="1" id="gb-shrine-input-'+k+'" onchange="updateGuildShrine(\''+k+'\', this.value)">'
+        + '<span class="global-buff-unit">'+t('levelUnit')+'</span></label>';
+    }).join('');
+  }
+}
+function syncGuildInputs() {
+  const gb = state.guildBuildings || {};
+  for (const k of GUILD_BUILDING_KEYS) {
+    const el = document.getElementById('gb-building-input-'+k);
+    if (el && el !== document.activeElement) el.value = Number(gb[k] || 0);
+  }
+  const gs = state.guildShrines || {};
+  for (const k of GUILD_SHRINE_KEYS) {
+    const el = document.getElementById('gb-shrine-input-'+k);
+    if (el && el !== document.activeElement) el.value = Number(gs[k] || 0);
+  }
+}
+function updateGuildBuilding(key, val) {
+  if (!state.guildBuildings) state.guildBuildings = GUILD_BUILDING_KEYS.reduce((o,k)=>(o[k]=0,o),{});
+  state.guildBuildings[key] = Math.max(0, Math.min(GUILD_BUILDING_MAX_LEVEL, Math.floor(Number(val) || 0)));
+  try { localStorage.setItem('mwi_guild_buildings', JSON.stringify(state.guildBuildings)); } catch(e) {}
+  if (state.members && state.members.length > 0 && state.result) calculate(); else { renderMemberTable(); renderSummary(); }
+  syncGuildInputs();
+}
+function updateGuildShrine(key, val) {
+  if (!state.guildShrines) state.guildShrines = { power:0, tempo:0, builder:0 };
+  state.guildShrines[key] = Math.max(0, Math.min(GUILD_SHRINE_MAX_LEVEL, Math.floor(Number(val) || 0)));
+  try { localStorage.setItem('mwi_guild_shrines', JSON.stringify(state.guildShrines)); } catch(e) {}
+  if (state.members && state.members.length > 0 && state.result) calculate(); else { renderMemberTable(); renderSummary(); }
+  syncGuildInputs();
+}
 
 function loadPrefs() {
   try {
@@ -771,6 +1148,28 @@ function loadPrefs() {
       } catch(e) {}
     }
   } catch(e) {}
+  const rawGBuild = localStorage.getItem('mwi_guild_buildings');
+  if (rawGBuild) {
+    try {
+      const obj = JSON.parse(rawGBuild);
+      if (obj && typeof obj === 'object') {
+        state.guildBuildings = GUILD_BUILDING_KEYS.reduce((o,k)=>(o[k]=Math.max(0,Math.floor(Number(obj[k])||0)),o),{});
+      }
+    } catch(e) {}
+  }
+  const rawGShr = localStorage.getItem('mwi_guild_shrines');
+  if (rawGShr) {
+    try {
+      const obj = JSON.parse(rawGShr);
+      if (obj && typeof obj === 'object') {
+        state.guildShrines = {
+          power: Math.max(0, Math.floor(Number(obj.power)||0)),
+          tempo: Math.max(0, Math.floor(Number(obj.tempo)||0)),
+          builder: Math.max(0, Math.floor(Number(obj.builder)||0)),
+        };
+      }
+    } catch(e) {}
+  }
   document.documentElement.setAttribute('data-theme', state.theme);
 }
 
@@ -965,7 +1364,14 @@ function parseMemberFromProfile(profile) {
       equipment[slot] = { iconId, enhance };
     }
   }
-  return { name, levels, equipment };
+  const out = { name, levels, equipment };
+  // 逐人加成数据：公会成员导出的是完整 profile，可能携带这些字段（成就/房屋 buff 依赖它们）
+  if (profile.achievementsValue) out.achievementsValue = profile.achievementsValue;
+  if (profile.achievementActionTypeBuffsDict) out.achievementActionTypeBuffsDict = profile.achievementActionTypeBuffsDict;
+  if (profile.achievements) out.achievements = profile.achievements;
+  if (profile.houseActionTypeBuffsDict) out.houseActionTypeBuffsDict = profile.houseActionTypeBuffsDict;
+  if (profile.houseRoomLevels) out.houseRoomLevels = profile.houseRoomLevels;
+  return out;
 }
 function importJson() {
   const input = document.createElement('input');
@@ -1291,6 +1697,7 @@ async function refreshFromServer() {
 // === Init ===
 async function init() {
   loadPrefs();
+  renderGuildInputs();
   const params = new URLSearchParams(window.location.search);
   const guild = params.get('guild');
   const bin = params.get('bin');
@@ -1368,6 +1775,10 @@ __SVG_SYMBOLS__
       <span class="global-buff-unit" id="gb-unit-enhancingSpeed">级</span>
     </label>
   </div>
+  <h3 id="h3-guild-buildings">公会建筑 <span class="global-buff-hint" id="guild-buildings-hint" title=""></span></h3>
+  <div class="global-buff-bar" id="guild-buildings-bar"></div>
+  <h3 id="h3-guild-shrines">公会神龛 <span class="global-buff-hint" id="guild-shrines-hint" title=""></span></h3>
+  <div class="global-buff-bar" id="guild-shrines-bar"></div>
 </div>
 
 <div class="trial-section">
@@ -1492,8 +1903,32 @@ def main():
     equip_icons_lines.append('};')
     equip_icons_js = '\n'.join(equip_icons_lines)
 
+    # Build game data JS from mwi_data.json (装备/工具/房屋/公会加成等)
+    gd = GAME_DATA
+    game_data_lines = []
+    if gd:
+        game_data_lines.append('const EQUIPMENT_BASE_BONUSES = %s;' % json.dumps(gd.get('equipmentBaseBonuses', {}), ensure_ascii=False))
+        game_data_lines.append('const ENH_BONUS_PERCENT_TABLE = %s;' % json.dumps(gd.get('enhancementBonusTable', [])))
+        game_data_lines.append('const ACCESSORY_ENH_SLOTS = new Set(%s);' % json.dumps(gd.get('accessoryEnhSlots', []), ensure_ascii=False))
+        game_data_lines.append('const TOOL_PREFIX_BONUS = %s;' % json.dumps(gd.get('toolPrefixBonus', {}), ensure_ascii=False))
+        game_data_lines.append('const ENHANCER_PREFIX_BONUS = %s;' % json.dumps(gd.get('enhancerPrefixBonus', {}), ensure_ascii=False))
+        game_data_lines.append('const TOOL_SUFFIX_SKILL = %s;' % json.dumps(gd.get('toolSuffixSkill', {}), ensure_ascii=False))
+        game_data_lines.append('const HOUSE_ROOM_SKILL_MAP = %s;' % json.dumps(gd.get('houseRoomSkillMap', {}), ensure_ascii=False))
+        game_data_lines.append('const HOUSE_BONUS_PER_LEVEL = %s;' % json.dumps(gd.get('houseBonusPerLevel', {})))
+        gbd = gd.get('guildBuilding', {})
+        game_data_lines.append('const GUILD_BUILDING_KEYS = %s;' % json.dumps(gbd.get('keys', []), ensure_ascii=False))
+        game_data_lines.append('const GUILD_BUILDING_LIFE_KEYS = %s;' % json.dumps(gbd.get('lifeKeys', []), ensure_ascii=False))
+        game_data_lines.append('const GUILD_BUILDING_COMBAT_KEYS = %s;' % json.dumps(gbd.get('combatKeys', []), ensure_ascii=False))
+        game_data_lines.append('const GUILD_BUILDING_MAX_LEVEL = %s;' % json.dumps(gbd.get('maxLevel', 50)))
+        gsd = gd.get('guildShrine', {})
+        game_data_lines.append('const GUILD_SHRINE_KEYS = %s;' % json.dumps(gsd.get('keys', []), ensure_ascii=False))
+        game_data_lines.append('const GUILD_SHRINE_MAX_LEVEL = %s;' % json.dumps(gsd.get('maxLevel', 50)))
+        game_data_lines.append('const EMBEDDED_CLIENT_DATA = %s;' % json.dumps(gd.get('embeddedClientData', {}), ensure_ascii=False))
+    game_data_js = '\n'.join(game_data_lines)
+
     # Replace placeholders
     js_filled = JS.replace('// __EQUIP_ICONS_PLACEHOLDER__', equip_icons_js)
+    js_filled = js_filled.replace('// __GAME_DATA_PLACEHOLDER__', game_data_js)
     html_filled = HTML.replace('__CSS__', CSS).replace('__SVG_SYMBOLS__', svg_block).replace('__JS__', js_filled)
 
     # Write output

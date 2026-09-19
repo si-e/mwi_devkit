@@ -1,0 +1,1164 @@
+{
+  "_meta": {
+    "description": "MWI 试炼计算器游戏数据（装备/工具/房屋/公会加成与游戏 client 定义）。与生成逻辑分离，便于单独维护。",
+    "sources": [
+      "Chen19970809/MWI_Trial_Calculator: EQUIPMENT_BASE_BONUSES / TOOL_PREFIX_BONUS / EMBEDDED_CLIENT_DATA",
+      "Enhancelator/main.js: 强化等级→系数表 (ENH_BONUS_PERCENT_TABLE)"
+    ],
+    "notes": {
+      "equipmentBaseBonuses": "键 = /items/<iconId>；base = 0 级基础加成(小数)。装备实际加成 = base × (1 + 强化系数) × 物品倍率。",
+      "enhancementBonusTable": "index = 强化等级 0..20；值 = 该等级的加成系数(小数)。饰品/背部/项链/耳环/戒指槽位再 ×5 (见 accessoryEnhSlots)。",
+      "accessoryEnhSlots": "这些槽位的强化加成系数 ×5。",
+      "toolPrefixBonus": "生活工具前缀(品质)对应基础数值；后缀(工具类型)决定作用技能见 toolSuffixSkill。未命中 EQUIPMENT_BASE_BONUSES 时按 前缀数值×后缀技能 计算。",
+      "enhancerPrefixBonus": "强化工具(enhancer)前缀数值（影响 enhancingSuccess）。",
+      "houseBonusPerLevel": "房屋房间每级提供的效率加成(小数)，其余为 0。",
+      "guildBuilding/guildShrine": "本地输入项（不上传），maxLevel 为等级上限。"
+    }
+  },
+  "equipmentBaseBonuses": {
+    "/items/eye_watch": {
+      "base": {
+        "cheesesmithingEfficiency": 0.1,
+        "craftingEfficiency": 0.1,
+        "tailoringEfficiency": 0.1
+      }
+    },
+    "/items/red_culinary_hat": {
+      "base": {
+        "cookingEfficiency": 0.1,
+        "brewingEfficiency": 0.1
+      }
+    },
+    "/items/collectors_boots": {
+      "base": {
+        "milkingEfficiency": 0.1,
+        "woodcuttingEfficiency": 0.1,
+        "foragingEfficiency": 0.1
+      }
+    },
+    "/items/enchanted_gloves": {
+      "base": {
+        "enhancingSpeed": 0.1,
+        "alchemyEfficiency": 0.1
+      }
+    },
+    "/items/philosophers_necklace": {
+      "base": {
+        "skillingSpeed": 0.04,
+        "skillingEfficiency": 0.02
+      }
+    },
+    "/items/necklace_of_speed": {
+      "base": {
+        "skillingSpeed": 0.04
+      }
+    },
+    "/items/necklace_of_efficiency": {
+      "base": {
+        "skillingEfficiency": 0.02
+      }
+    },
+    "/items/earrings_of_gathering": {
+      "base": {
+        "gatheringQuantity": 0.02
+      }
+    },
+    "/items/ring_of_gathering": {
+      "base": {
+        "gatheringQuantity": 0.02
+      }
+    },
+    "/items/gatherer_cape": {
+      "base": {
+        "milkingSpeed": 0.05,
+        "foragingSpeed": 0.05,
+        "woodcuttingSpeed": 0.05
+      }
+    },
+    "/items/artificer_cape": {
+      "base": {
+        "cheesesmithingSpeed": 0.05,
+        "craftingSpeed": 0.05,
+        "tailoringSpeed": 0.05
+      }
+    },
+    "/items/culinary_cape": {
+      "base": {
+        "cookingSpeed": 0.05,
+        "brewingSpeed": 0.05
+      }
+    },
+    "/items/chance_cape": {
+      "base": {
+        "alchemySpeed": 0.05,
+        "enhancingSpeed": 0.05
+      }
+    },
+    "/items/dairyhands_top": {
+      "base": {
+        "milkingEfficiency": 0.1
+      }
+    },
+    "/items/dairyhands_bottoms": {
+      "base": {
+        "milkingEfficiency": 0.1
+      }
+    },
+    "/items/foragers_top": {
+      "base": {
+        "foragingEfficiency": 0.1
+      }
+    },
+    "/items/foragers_bottoms": {
+      "base": {
+        "foragingEfficiency": 0.1
+      }
+    },
+    "/items/lumberjacks_top": {
+      "base": {
+        "woodcuttingEfficiency": 0.1
+      }
+    },
+    "/items/lumberjacks_bottoms": {
+      "base": {
+        "woodcuttingEfficiency": 0.1
+      }
+    },
+    "/items/cheesemakers_top": {
+      "base": {
+        "cheesesmithingEfficiency": 0.1
+      }
+    },
+    "/items/cheesemakers_bottoms": {
+      "base": {
+        "cheesesmithingEfficiency": 0.1
+      }
+    },
+    "/items/crafters_top": {
+      "base": {
+        "craftingEfficiency": 0.1
+      }
+    },
+    "/items/crafters_bottoms": {
+      "base": {
+        "craftingEfficiency": 0.1
+      }
+    },
+    "/items/tailors_top": {
+      "base": {
+        "tailoringEfficiency": 0.1
+      }
+    },
+    "/items/tailors_bottoms": {
+      "base": {
+        "tailoringEfficiency": 0.1
+      }
+    },
+    "/items/chefs_top": {
+      "base": {
+        "cookingEfficiency": 0.1
+      }
+    },
+    "/items/chefs_bottoms": {
+      "base": {
+        "cookingEfficiency": 0.1
+      }
+    },
+    "/items/brewers_top": {
+      "base": {
+        "brewingEfficiency": 0.1
+      }
+    },
+    "/items/brewers_bottoms": {
+      "base": {
+        "brewingEfficiency": 0.1
+      }
+    },
+    "/items/alchemists_top": {
+      "base": {
+        "alchemyEfficiency": 0.1
+      }
+    },
+    "/items/alchemists_bottoms": {
+      "base": {
+        "alchemyEfficiency": 0.1
+      }
+    },
+    "/items/enhancers_top": {
+      "base": {
+        "enhancingSpeed": 0.1
+      }
+    },
+    "/items/enhancers_bottoms": {
+      "base": {
+        "enhancingSpeed": 0.1
+      }
+    }
+  },
+  "enhancementBonusTable": [
+    0,
+    0.02,
+    0.042,
+    0.066,
+    0.092,
+    0.12,
+    0.15,
+    0.182,
+    0.216,
+    0.252,
+    0.29,
+    0.334,
+    0.384,
+    0.44,
+    0.502,
+    0.57,
+    0.644,
+    0.724,
+    0.81,
+    0.902,
+    1
+  ],
+  "accessoryEnhSlots": [
+    "袋子",
+    "背部",
+    "项链",
+    "耳环",
+    "戒指"
+  ],
+  "toolPrefixBonus": {
+    "cheese": 0.15,
+    "verdant": 0.225,
+    "azure": 0.3,
+    "burble": 0.45,
+    "crimson": 0.61,
+    "rainbow": 0.75,
+    "holy": 0.9,
+    "celestial": 1.05
+  },
+  "enhancerPrefixBonus": {
+    "cheese": 0.006,
+    "verdant": 0.009,
+    "azure": 0.012,
+    "burble": 0.018,
+    "crimson": 0.024,
+    "rainbow": 0.03,
+    "holy": 0.036
+  },
+  "toolSuffixSkill": {
+    "brush": "milkingSpeed",
+    "shears": "foragingSpeed",
+    "hatchet": "woodcuttingSpeed",
+    "hammer": "cheesesmithingSpeed",
+    "chisel": "craftingSpeed",
+    "needle": "tailoringSpeed",
+    "pot": "cookingSpeed",
+    "spatula": "brewingSpeed",
+    "alembic": "alchemySpeed",
+    "enhancer": "enhancingSuccess"
+  },
+  "houseRoomSkillMap": {
+    "/house_rooms/dairy_barn": "/action_types/milking",
+    "/house_rooms/garden": "/action_types/foraging",
+    "/house_rooms/log_shed": "/action_types/woodcutting",
+    "/house_rooms/forge": "/action_types/cheesesmithing",
+    "/house_rooms/workshop": "/action_types/crafting",
+    "/house_rooms/sewing_parlor": "/action_types/tailoring",
+    "/house_rooms/kitchen": "/action_types/cooking",
+    "/house_rooms/brewery": "/action_types/brewing",
+    "/house_rooms/laboratory": "/action_types/alchemy",
+    "/house_rooms/observatory": "/action_types/enhancing"
+  },
+  "houseBonusPerLevel": {
+    "speed": 0,
+    "efficiency": 0.015,
+    "success": 0,
+    "gathering": 0,
+    "skillLevel": 0
+  },
+  "guildBuilding": {
+    "keys": [
+      "milking",
+      "foraging",
+      "woodcutting",
+      "cheesesmithing",
+      "crafting",
+      "tailoring",
+      "cooking",
+      "brewing",
+      "alchemy",
+      "enhancing",
+      "stamina",
+      "intelligence",
+      "attack",
+      "defense",
+      "melee",
+      "ranged",
+      "magic"
+    ],
+    "lifeKeys": [
+      "milking",
+      "foraging",
+      "woodcutting",
+      "cheesmithing",
+      "crafting",
+      "tailoring",
+      "cooking",
+      "brewing",
+      "alchemy",
+      "enhancing"
+    ],
+    "combatKeys": [
+      "stamina",
+      "intelligence",
+      "attack",
+      "defense",
+      "melee",
+      "ranged",
+      "magic"
+    ],
+    "maxLevel": 50
+  },
+  "guildShrine": {
+    "keys": [
+      "power",
+      "tempo",
+      "builder"
+    ],
+    "maxLevel": 50
+  },
+  "embeddedClientData": {
+    "houseRoomDetailMap": {
+      "/house_rooms/archery_range": {
+        "actionBuffs": [
+          {
+            "typeHrid": "/buff_types/ranged_level",
+            "flatBoost": 1,
+            "flatBoostLevelBonus": 1,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ],
+        "globalBuffs": [
+          {
+            "typeHrid": "/buff_types/wisdom",
+            "flatBoost": 0.0005,
+            "flatBoostLevelBonus": 0.0005,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          },
+          {
+            "typeHrid": "/buff_types/rare_find",
+            "flatBoost": 0.002,
+            "flatBoostLevelBonus": 0.002,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ]
+      },
+      "/house_rooms/armory": {
+        "actionBuffs": [
+          {
+            "typeHrid": "/buff_types/defense_level",
+            "flatBoost": 1,
+            "flatBoostLevelBonus": 1,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ],
+        "globalBuffs": [
+          {
+            "typeHrid": "/buff_types/wisdom",
+            "flatBoost": 0.0005,
+            "flatBoostLevelBonus": 0.0005,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          },
+          {
+            "typeHrid": "/buff_types/rare_find",
+            "flatBoost": 0.002,
+            "flatBoostLevelBonus": 0.002,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ]
+      },
+      "/house_rooms/brewery": {
+        "actionBuffs": [
+          {
+            "typeHrid": "/buff_types/efficiency",
+            "flatBoost": 0.015,
+            "flatBoostLevelBonus": 0.015,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ],
+        "globalBuffs": [
+          {
+            "typeHrid": "/buff_types/wisdom",
+            "flatBoost": 0.0005,
+            "flatBoostLevelBonus": 0.0005,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          },
+          {
+            "typeHrid": "/buff_types/rare_find",
+            "flatBoost": 0.002,
+            "flatBoostLevelBonus": 0.002,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ]
+      },
+      "/house_rooms/dairy_barn": {
+        "actionBuffs": [
+          {
+            "typeHrid": "/buff_types/efficiency",
+            "flatBoost": 0.015,
+            "flatBoostLevelBonus": 0.015,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ],
+        "globalBuffs": [
+          {
+            "typeHrid": "/buff_types/wisdom",
+            "flatBoost": 0.0005,
+            "flatBoostLevelBonus": 0.0005,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          },
+          {
+            "typeHrid": "/buff_types/rare_find",
+            "flatBoost": 0.002,
+            "flatBoostLevelBonus": 0.002,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ]
+      },
+      "/house_rooms/dining_room": {
+        "actionBuffs": [
+          {
+            "typeHrid": "/buff_types/stamina_level",
+            "flatBoost": 1,
+            "flatBoostLevelBonus": 1,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          },
+          {
+            "typeHrid": "/buff_types/hp_regen",
+            "flatBoost": 0.0003,
+            "flatBoostLevelBonus": 0.0003,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ],
+        "globalBuffs": [
+          {
+            "typeHrid": "/buff_types/wisdom",
+            "flatBoost": 0.0005,
+            "flatBoostLevelBonus": 0.0005,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          },
+          {
+            "typeHrid": "/buff_types/rare_find",
+            "flatBoost": 0.002,
+            "flatBoostLevelBonus": 0.002,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ]
+      },
+      "/house_rooms/dojo": {
+        "actionBuffs": [
+          {
+            "typeHrid": "/buff_types/attack_level",
+            "flatBoost": 1,
+            "flatBoostLevelBonus": 1,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          },
+          {
+            "typeHrid": "/buff_types/attack_speed",
+            "flatBoost": 0,
+            "flatBoostLevelBonus": 0,
+            "ratioBoost": 0.005,
+            "ratioBoostLevelBonus": 0.005
+          },
+          {
+            "typeHrid": "/buff_types/cast_speed",
+            "flatBoost": 0.005,
+            "flatBoostLevelBonus": 0.005,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ],
+        "globalBuffs": [
+          {
+            "typeHrid": "/buff_types/wisdom",
+            "flatBoost": 0.0005,
+            "flatBoostLevelBonus": 0.0005,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          },
+          {
+            "typeHrid": "/buff_types/rare_find",
+            "flatBoost": 0.002,
+            "flatBoostLevelBonus": 0.002,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ]
+      },
+      "/house_rooms/forge": {
+        "actionBuffs": [
+          {
+            "typeHrid": "/buff_types/efficiency",
+            "flatBoost": 0.015,
+            "flatBoostLevelBonus": 0.015,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ],
+        "globalBuffs": [
+          {
+            "typeHrid": "/buff_types/wisdom",
+            "flatBoost": 0.0005,
+            "flatBoostLevelBonus": 0.0005,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          },
+          {
+            "typeHrid": "/buff_types/rare_find",
+            "flatBoost": 0.002,
+            "flatBoostLevelBonus": 0.002,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ]
+      },
+      "/house_rooms/garden": {
+        "actionBuffs": [
+          {
+            "typeHrid": "/buff_types/efficiency",
+            "flatBoost": 0.015,
+            "flatBoostLevelBonus": 0.015,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ],
+        "globalBuffs": [
+          {
+            "typeHrid": "/buff_types/wisdom",
+            "flatBoost": 0.0005,
+            "flatBoostLevelBonus": 0.0005,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          },
+          {
+            "typeHrid": "/buff_types/rare_find",
+            "flatBoost": 0.002,
+            "flatBoostLevelBonus": 0.002,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ]
+      },
+      "/house_rooms/gym": {
+        "actionBuffs": [
+          {
+            "typeHrid": "/buff_types/melee_level",
+            "flatBoost": 1,
+            "flatBoostLevelBonus": 1,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ],
+        "globalBuffs": [
+          {
+            "typeHrid": "/buff_types/wisdom",
+            "flatBoost": 0.0005,
+            "flatBoostLevelBonus": 0.0005,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          },
+          {
+            "typeHrid": "/buff_types/rare_find",
+            "flatBoost": 0.002,
+            "flatBoostLevelBonus": 0.002,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ]
+      },
+      "/house_rooms/kitchen": {
+        "actionBuffs": [
+          {
+            "typeHrid": "/buff_types/efficiency",
+            "flatBoost": 0.015,
+            "flatBoostLevelBonus": 0.015,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ],
+        "globalBuffs": [
+          {
+            "typeHrid": "/buff_types/wisdom",
+            "flatBoost": 0.0005,
+            "flatBoostLevelBonus": 0.0005,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          },
+          {
+            "typeHrid": "/buff_types/rare_find",
+            "flatBoost": 0.002,
+            "flatBoostLevelBonus": 0.002,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ]
+      },
+      "/house_rooms/laboratory": {
+        "actionBuffs": [
+          {
+            "typeHrid": "/buff_types/efficiency",
+            "flatBoost": 0.015,
+            "flatBoostLevelBonus": 0.015,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ],
+        "globalBuffs": [
+          {
+            "typeHrid": "/buff_types/wisdom",
+            "flatBoost": 0.0005,
+            "flatBoostLevelBonus": 0.0005,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          },
+          {
+            "typeHrid": "/buff_types/rare_find",
+            "flatBoost": 0.002,
+            "flatBoostLevelBonus": 0.002,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ]
+      },
+      "/house_rooms/library": {
+        "actionBuffs": [
+          {
+            "typeHrid": "/buff_types/intelligence_level",
+            "flatBoost": 1,
+            "flatBoostLevelBonus": 1,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          },
+          {
+            "typeHrid": "/buff_types/mp_regen",
+            "flatBoost": 0.0003,
+            "flatBoostLevelBonus": 0.0003,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ],
+        "globalBuffs": [
+          {
+            "typeHrid": "/buff_types/wisdom",
+            "flatBoost": 0.0005,
+            "flatBoostLevelBonus": 0.0005,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          },
+          {
+            "typeHrid": "/buff_types/rare_find",
+            "flatBoost": 0.002,
+            "flatBoostLevelBonus": 0.002,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ]
+      },
+      "/house_rooms/log_shed": {
+        "actionBuffs": [
+          {
+            "typeHrid": "/buff_types/efficiency",
+            "flatBoost": 0.015,
+            "flatBoostLevelBonus": 0.015,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ],
+        "globalBuffs": [
+          {
+            "typeHrid": "/buff_types/wisdom",
+            "flatBoost": 0.0005,
+            "flatBoostLevelBonus": 0.0005,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          },
+          {
+            "typeHrid": "/buff_types/rare_find",
+            "flatBoost": 0.002,
+            "flatBoostLevelBonus": 0.002,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ]
+      },
+      "/house_rooms/mystical_study": {
+        "actionBuffs": [
+          {
+            "typeHrid": "/buff_types/magic_level",
+            "flatBoost": 1,
+            "flatBoostLevelBonus": 1,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ],
+        "globalBuffs": [
+          {
+            "typeHrid": "/buff_types/wisdom",
+            "flatBoost": 0.0005,
+            "flatBoostLevelBonus": 0.0005,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          },
+          {
+            "typeHrid": "/buff_types/rare_find",
+            "flatBoost": 0.002,
+            "flatBoostLevelBonus": 0.002,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ]
+      },
+      "/house_rooms/observatory": {
+        "actionBuffs": [
+          {
+            "typeHrid": "/buff_types/action_speed",
+            "flatBoost": 0.01,
+            "flatBoostLevelBonus": 0.01,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          },
+          {
+            "typeHrid": "/buff_types/enhancing_success",
+            "flatBoost": 0,
+            "flatBoostLevelBonus": 0,
+            "ratioBoost": 0.0005,
+            "ratioBoostLevelBonus": 0.0005
+          }
+        ],
+        "globalBuffs": [
+          {
+            "typeHrid": "/buff_types/wisdom",
+            "flatBoost": 0.0005,
+            "flatBoostLevelBonus": 0.0005,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          },
+          {
+            "typeHrid": "/buff_types/rare_find",
+            "flatBoost": 0.002,
+            "flatBoostLevelBonus": 0.002,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ]
+      },
+      "/house_rooms/sewing_parlor": {
+        "actionBuffs": [
+          {
+            "typeHrid": "/buff_types/efficiency",
+            "flatBoost": 0.015,
+            "flatBoostLevelBonus": 0.015,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ],
+        "globalBuffs": [
+          {
+            "typeHrid": "/buff_types/wisdom",
+            "flatBoost": 0.0005,
+            "flatBoostLevelBonus": 0.0005,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          },
+          {
+            "typeHrid": "/buff_types/rare_find",
+            "flatBoost": 0.002,
+            "flatBoostLevelBonus": 0.002,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ]
+      },
+      "/house_rooms/workshop": {
+        "actionBuffs": [
+          {
+            "typeHrid": "/buff_types/efficiency",
+            "flatBoost": 0.015,
+            "flatBoostLevelBonus": 0.015,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ],
+        "globalBuffs": [
+          {
+            "typeHrid": "/buff_types/wisdom",
+            "flatBoost": 0.0005,
+            "flatBoostLevelBonus": 0.0005,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          },
+          {
+            "typeHrid": "/buff_types/rare_find",
+            "flatBoost": 0.002,
+            "flatBoostLevelBonus": 0.002,
+            "ratioBoost": 0,
+            "ratioBoostLevelBonus": 0
+          }
+        ]
+      }
+    },
+    "achievementDetailMap": {
+      "/achievements/bestiary_points_100": {
+        "tierHrid": "/achievement_tiers/veteran"
+      },
+      "/achievements/bestiary_points_20": {
+        "tierHrid": "/achievement_tiers/novice"
+      },
+      "/achievements/bestiary_points_200": {
+        "tierHrid": "/achievement_tiers/elite"
+      },
+      "/achievements/bestiary_points_40": {
+        "tierHrid": "/achievement_tiers/adept"
+      },
+      "/achievements/bestiary_points_400": {
+        "tierHrid": "/achievement_tiers/champion"
+      },
+      "/achievements/brew_gourmet_tea": {
+        "tierHrid": "/achievement_tiers/novice"
+      },
+      "/achievements/brew_ultra_magic_coffee": {
+        "tierHrid": "/achievement_tiers/elite"
+      },
+      "/achievements/build_room_level_1": {
+        "tierHrid": "/achievement_tiers/adept"
+      },
+      "/achievements/build_room_level_3": {
+        "tierHrid": "/achievement_tiers/veteran"
+      },
+      "/achievements/build_room_level_6": {
+        "tierHrid": "/achievement_tiers/elite"
+      },
+      "/achievements/build_room_level_8": {
+        "tierHrid": "/achievement_tiers/champion"
+      },
+      "/achievements/buy_trainee_charm": {
+        "tierHrid": "/achievement_tiers/adept"
+      },
+      "/achievements/cheesesmith_azure_tool": {
+        "tierHrid": "/achievement_tiers/novice"
+      },
+      "/achievements/clear_chimerical_den": {
+        "tierHrid": "/achievement_tiers/elite"
+      },
+      "/achievements/clear_enchanted_fortress": {
+        "tierHrid": "/achievement_tiers/champion"
+      },
+      "/achievements/clear_pirate_cove": {
+        "tierHrid": "/achievement_tiers/champion"
+      },
+      "/achievements/clear_sinister_circus": {
+        "tierHrid": "/achievement_tiers/elite"
+      },
+      "/achievements/clear_t1_dungeon_10_times": {
+        "tierHrid": "/achievement_tiers/champion"
+      },
+      "/achievements/coinify_coins_1m": {
+        "tierHrid": "/achievement_tiers/veteran"
+      },
+      "/achievements/collect_branch_of_insight": {
+        "tierHrid": "/achievement_tiers/elite"
+      },
+      "/achievements/collect_butter_of_proficiency": {
+        "tierHrid": "/achievement_tiers/elite"
+      },
+      "/achievements/collect_thread_of_expertise": {
+        "tierHrid": "/achievement_tiers/elite"
+      },
+      "/achievements/collection_points_100": {
+        "tierHrid": "/achievement_tiers/novice"
+      },
+      "/achievements/collection_points_1000": {
+        "tierHrid": "/achievement_tiers/elite"
+      },
+      "/achievements/collection_points_200": {
+        "tierHrid": "/achievement_tiers/adept"
+      },
+      "/achievements/collection_points_2000": {
+        "tierHrid": "/achievement_tiers/champion"
+      },
+      "/achievements/collection_points_500": {
+        "tierHrid": "/achievement_tiers/veteran"
+      },
+      "/achievements/complete_tutorial": {
+        "tierHrid": "/achievement_tiers/beginner"
+      },
+      "/achievements/cook_apple_gummy": {
+        "tierHrid": "/achievement_tiers/beginner"
+      },
+      "/achievements/cook_peach_yogurt": {
+        "tierHrid": "/achievement_tiers/adept"
+      },
+      "/achievements/cook_spaceberry_cake": {
+        "tierHrid": "/achievement_tiers/veteran"
+      },
+      "/achievements/craft_celestial_tool_or_outfit": {
+        "tierHrid": "/achievement_tiers/champion"
+      },
+      "/achievements/craft_dungeon_equipment": {
+        "tierHrid": "/achievement_tiers/elite"
+      },
+      "/achievements/craft_jewelry": {
+        "tierHrid": "/achievement_tiers/adept"
+      },
+      "/achievements/craft_master_charm": {
+        "tierHrid": "/achievement_tiers/champion"
+      },
+      "/achievements/craft_wooden_bow": {
+        "tierHrid": "/achievement_tiers/beginner"
+      },
+      "/achievements/decompose_bamboo_gloves": {
+        "tierHrid": "/achievement_tiers/adept"
+      },
+      "/achievements/defeat_chronofrost_sorcerer": {
+        "tierHrid": "/achievement_tiers/veteran"
+      },
+      "/achievements/defeat_crystal_colossus": {
+        "tierHrid": "/achievement_tiers/elite"
+      },
+      "/achievements/defeat_demonic_overlord_t1": {
+        "tierHrid": "/achievement_tiers/champion"
+      },
+      "/achievements/defeat_dusk_revenant": {
+        "tierHrid": "/achievement_tiers/elite"
+      },
+      "/achievements/defeat_gobo_chieftain": {
+        "tierHrid": "/achievement_tiers/adept"
+      },
+      "/achievements/defeat_jerry": {
+        "tierHrid": "/achievement_tiers/beginner"
+      },
+      "/achievements/defeat_jerry_t5": {
+        "tierHrid": "/achievement_tiers/veteran"
+      },
+      "/achievements/defeat_luna_empress": {
+        "tierHrid": "/achievement_tiers/adept"
+      },
+      "/achievements/defeat_marine_huntress": {
+        "tierHrid": "/achievement_tiers/novice"
+      },
+      "/achievements/defeat_red_panda": {
+        "tierHrid": "/achievement_tiers/veteran"
+      },
+      "/achievements/defeat_shoebill": {
+        "tierHrid": "/achievement_tiers/novice"
+      },
+      "/achievements/defeat_stalactite_golem_t5": {
+        "tierHrid": "/achievement_tiers/champion"
+      },
+      "/achievements/defeat_the_watcher": {
+        "tierHrid": "/achievement_tiers/adept"
+      },
+      "/achievements/enhance_level_80_to_10": {
+        "tierHrid": "/achievement_tiers/elite"
+      },
+      "/achievements/enhance_level_90_to_10": {
+        "tierHrid": "/achievement_tiers/champion"
+      },
+      "/achievements/enhance_to_10": {
+        "tierHrid": "/achievement_tiers/veteran"
+      },
+      "/achievements/enhance_to_3": {
+        "tierHrid": "/achievement_tiers/novice"
+      },
+      "/achievements/enhance_to_6": {
+        "tierHrid": "/achievement_tiers/adept"
+      },
+      "/achievements/equip_expert_task_badge": {
+        "tierHrid": "/achievement_tiers/elite"
+      },
+      "/achievements/equip_ginkgo_weapon": {
+        "tierHrid": "/achievement_tiers/adept"
+      },
+      "/achievements/gather_milk": {
+        "tierHrid": "/achievement_tiers/beginner"
+      },
+      "/achievements/labyrinth_floor_2": {
+        "tierHrid": "/achievement_tiers/adept"
+      },
+      "/achievements/labyrinth_floor_4": {
+        "tierHrid": "/achievement_tiers/veteran"
+      },
+      "/achievements/labyrinth_floor_6": {
+        "tierHrid": "/achievement_tiers/elite"
+      },
+      "/achievements/labyrinth_floor_8": {
+        "tierHrid": "/achievement_tiers/champion"
+      },
+      "/achievements/learn_ability": {
+        "tierHrid": "/achievement_tiers/novice"
+      },
+      "/achievements/learn_special_ability": {
+        "tierHrid": "/achievement_tiers/veteran"
+      },
+      "/achievements/refine_dungeon_equipment": {
+        "tierHrid": "/achievement_tiers/champion"
+      },
+      "/achievements/tailor_gluttonous_or_guzzling_pouch": {
+        "tierHrid": "/achievement_tiers/champion"
+      },
+      "/achievements/tailor_medium_pouch": {
+        "tierHrid": "/achievement_tiers/novice"
+      },
+      "/achievements/tailor_umbral_tunic": {
+        "tierHrid": "/achievement_tiers/veteran"
+      },
+      "/achievements/task_tokens_10": {
+        "tierHrid": "/achievement_tiers/novice"
+      },
+      "/achievements/total_level_100": {
+        "tierHrid": "/achievement_tiers/beginner"
+      },
+      "/achievements/total_level_1000": {
+        "tierHrid": "/achievement_tiers/veteran"
+      },
+      "/achievements/total_level_1500": {
+        "tierHrid": "/achievement_tiers/elite"
+      },
+      "/achievements/total_level_1800": {
+        "tierHrid": "/achievement_tiers/champion"
+      },
+      "/achievements/total_level_250": {
+        "tierHrid": "/achievement_tiers/novice"
+      },
+      "/achievements/total_level_500": {
+        "tierHrid": "/achievement_tiers/adept"
+      },
+      "/achievements/transmute_philosophers_stone": {
+        "tierHrid": "/achievement_tiers/champion"
+      },
+      "/achievements/woodcut_arcane_tree": {
+        "tierHrid": "/achievement_tiers/veteran"
+      }
+    },
+    "achievementTierDetailMap": {
+      "/achievement_tiers/adept": {
+        "buff": {
+          "typeHrid": "/buff_types/efficiency",
+          "flatBoost": 0.02,
+          "flatBoostLevelBonus": 0,
+          "ratioBoost": 0,
+          "ratioBoostLevelBonus": 0
+        },
+        "usableInActionTypeMap": {
+          "/action_types/alchemy": true,
+          "/action_types/brewing": true,
+          "/action_types/cheesesmithing": true,
+          "/action_types/cooking": true,
+          "/action_types/crafting": true,
+          "/action_types/foraging": true,
+          "/action_types/milking": true,
+          "/action_types/tailoring": true,
+          "/action_types/woodcutting": true
+        }
+      },
+      "/achievement_tiers/beginner": {
+        "buff": {
+          "typeHrid": "/buff_types/gathering",
+          "flatBoost": 0.02,
+          "flatBoostLevelBonus": 0,
+          "ratioBoost": 0,
+          "ratioBoostLevelBonus": 0
+        },
+        "usableInActionTypeMap": {
+          "/action_types/foraging": true,
+          "/action_types/milking": true,
+          "/action_types/woodcutting": true
+        }
+      },
+      "/achievement_tiers/champion": {
+        "buff": {
+          "typeHrid": "/buff_types/enhancing_success",
+          "flatBoost": 0,
+          "flatBoostLevelBonus": 0,
+          "ratioBoost": 0.002,
+          "ratioBoostLevelBonus": 0
+        },
+        "usableInActionTypeMap": {
+          "/action_types/enhancing": true
+        }
+      },
+      "/achievement_tiers/elite": {
+        "buff": {
+          "typeHrid": "/buff_types/damage",
+          "flatBoost": 0,
+          "flatBoostLevelBonus": 0,
+          "ratioBoost": 0.02,
+          "ratioBoostLevelBonus": 0
+        },
+        "usableInActionTypeMap": {
+          "/action_types/combat": true
+        }
+      },
+      "/achievement_tiers/novice": {
+        "buff": {
+          "typeHrid": "/buff_types/wisdom",
+          "flatBoost": 0.02,
+          "flatBoostLevelBonus": 0,
+          "ratioBoost": 0,
+          "ratioBoostLevelBonus": 0
+        },
+        "usableInActionTypeMap": {
+          "/action_types/alchemy": true,
+          "/action_types/brewing": true,
+          "/action_types/cheesesmithing": true,
+          "/action_types/combat": true,
+          "/action_types/cooking": true,
+          "/action_types/crafting": true,
+          "/action_types/enhancing": true,
+          "/action_types/foraging": true,
+          "/action_types/milking": true,
+          "/action_types/tailoring": true,
+          "/action_types/woodcutting": true
+        }
+      },
+      "/achievement_tiers/veteran": {
+        "buff": {
+          "typeHrid": "/buff_types/rare_find",
+          "flatBoost": 0.02,
+          "flatBoostLevelBonus": 0,
+          "ratioBoost": 0,
+          "ratioBoostLevelBonus": 0
+        },
+        "usableInActionTypeMap": {
+          "/action_types/alchemy": true,
+          "/action_types/brewing": true,
+          "/action_types/cheesesmithing": true,
+          "/action_types/combat": true,
+          "/action_types/cooking": true,
+          "/action_types/crafting": true,
+          "/action_types/enhancing": true,
+          "/action_types/foraging": true,
+          "/action_types/milking": true,
+          "/action_types/tailoring": true,
+          "/action_types/woodcutting": true
+        }
+      }
+    }
+  }
+}
