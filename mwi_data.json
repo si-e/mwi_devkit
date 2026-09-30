@@ -12,7 +12,8 @@
       "toolPrefixBonus": "生活工具前缀(品质)对应基础数值；后缀(工具类型)决定作用技能见 toolSuffixSkill。未命中 EQUIPMENT_BASE_BONUSES 时按 前缀数值×后缀技能 计算。",
       "enhancerPrefixBonus": "强化工具(enhancer)前缀数值（影响 enhancingSuccess）。",
       "houseBonusPerLevel": "房屋房间每级提供的效率加成(小数)，其余为 0。",
-      "guildBuilding/guildShrine": "本地输入项（不上传），maxLevel 为等级上限。"
+      "guildBuilding": "本地输入项（不上传）。17 座试炼建筑（对应房屋房间），maxLevel=20，每级 +skillLevelPerLevel 有效等级（近似）。icons 映射到 guild_sprite.svg 的 symbol id。",
+      "guildShrine": "本地输入项（不上传）。5 座神龛（对齐游戏：力量/节奏/精神/稀有/学者），maxLevel=20。skillingBuffs 为每级生活增益（来自游戏 guildBuffDetailMap）：force=效率+0.5%/级、tempo=动作速度+0.5%/级、spirit=精华掉率+2%/级、rarity=稀有掉率+1%/级、scholar=智慧+0.5%/级。仅 force/tempo 影响试炼推演指标。"
     }
   },
   "equipmentBaseBonuses": {
@@ -276,6 +277,219 @@
     "skillLevel": 0
   },
   "guildBuilding": {
+    "maxLevel": 20,
+    "skillLevelPerLevel": 2,
+    "utility": [
+      {
+        "key": "guild_hall",
+        "icon": "guild_guild_hall",
+        "zh": "公会大厅",
+        "en": "Guild Hall",
+        "effectZh": "增加公会成员上限",
+        "effectEn": "Raises max members",
+        "hrid": "/guild_buildings/guild_hall"
+      },
+      {
+        "key": "builders_hall",
+        "icon": "guild_builders_hall",
+        "zh": "建造者殿堂",
+        "en": "Builder's Hall",
+        "effectZh": "提高公会点数获取",
+        "effectEn": "Boosts Guild Points",
+        "hrid": "/guild_buildings/builders_hall"
+      },
+      {
+        "key": "treasury",
+        "icon": "guild_treasury",
+        "zh": "金库",
+        "en": "Treasury",
+        "effectZh": "提高公会代币奖励",
+        "effectEn": "Boosts Guild Tokens",
+        "hrid": "/guild_buildings/treasury"
+      },
+      {
+        "key": "archives",
+        "icon": "guild_archives",
+        "zh": "档案馆",
+        "en": "Archives",
+        "effectZh": "提高公会经验获取",
+        "effectEn": "Boosts Guild Experience",
+        "hrid": "/guild_buildings/archives"
+      },
+      {
+        "key": "skilling_encampment",
+        "icon": "guild_skilling_encampment",
+        "zh": "生活营地",
+        "en": "Skilling Encampment",
+        "effectZh": "参加生活试炼人数 +2/级",
+        "effectEn": "Skilling trial slots +2/lv",
+        "hrid": "/guild_buildings/skilling_encampment"
+      },
+      {
+        "key": "combat_encampment",
+        "icon": "guild_combat_encampment",
+        "zh": "战斗营地",
+        "en": "Combat Encampment",
+        "effectZh": "参加战斗试炼人数 +2/级",
+        "effectEn": "Combat trial slots +2/lv",
+        "hrid": "/guild_buildings/combat_encampment"
+      }
+    ],
+    "trial": [
+      {
+        "skill": "milking",
+        "icon": "guild_dairy_barn",
+        "zh": "公会奶牛棚",
+        "en": "Dairy Barn",
+        "skillZh": "挤奶",
+        "skillEn": "Milking",
+        "hrid": "/guild_buildings/dairy_barn"
+      },
+      {
+        "skill": "foraging",
+        "icon": "guild_garden",
+        "zh": "公会花园",
+        "en": "Garden",
+        "skillZh": "采摘",
+        "skillEn": "Foraging",
+        "hrid": "/guild_buildings/garden"
+      },
+      {
+        "skill": "woodcutting",
+        "icon": "guild_log_shed",
+        "zh": "公会木棚",
+        "en": "Log Shed",
+        "skillZh": "伐木",
+        "skillEn": "Woodcutting",
+        "hrid": "/guild_buildings/log_shed"
+      },
+      {
+        "skill": "cheesesmithing",
+        "icon": "guild_forge",
+        "zh": "公会锻造台",
+        "en": "Forge",
+        "skillZh": "奶酪锻造",
+        "skillEn": "Cheesesmithing",
+        "hrid": "/guild_buildings/forge"
+      },
+      {
+        "skill": "crafting",
+        "icon": "guild_workshop",
+        "zh": "公会工作间",
+        "en": "Workshop",
+        "skillZh": "制作",
+        "skillEn": "Crafting",
+        "hrid": "/guild_buildings/workshop"
+      },
+      {
+        "skill": "tailoring",
+        "icon": "guild_sewing_parlor",
+        "zh": "公会缝纫室",
+        "en": "Sewing Parlor",
+        "skillZh": "缝纫",
+        "skillEn": "Tailoring",
+        "hrid": "/guild_buildings/sewing_parlor"
+      },
+      {
+        "skill": "cooking",
+        "icon": "guild_kitchen",
+        "zh": "公会厨房",
+        "en": "Kitchen",
+        "skillZh": "烹饪",
+        "skillEn": "Cooking",
+        "hrid": "/guild_buildings/kitchen"
+      },
+      {
+        "skill": "brewing",
+        "icon": "guild_brewery",
+        "zh": "公会冲泡坊",
+        "en": "Brewery",
+        "skillZh": "冲泡",
+        "skillEn": "Brewing",
+        "hrid": "/guild_buildings/brewery"
+      },
+      {
+        "skill": "alchemy",
+        "icon": "guild_laboratory",
+        "zh": "公会实验室",
+        "en": "Laboratory",
+        "skillZh": "炼金",
+        "skillEn": "Alchemy",
+        "hrid": "/guild_buildings/laboratory"
+      },
+      {
+        "skill": "enhancing",
+        "icon": "guild_observatory",
+        "zh": "公会天文台",
+        "en": "Observatory",
+        "skillZh": "强化",
+        "skillEn": "Enhancing",
+        "hrid": "/guild_buildings/observatory"
+      },
+      {
+        "skill": "stamina",
+        "icon": "guild_dining_room",
+        "zh": "公会餐厅",
+        "en": "Dining Room",
+        "skillZh": "耐力",
+        "skillEn": "Stamina",
+        "hrid": "/guild_buildings/dining_room"
+      },
+      {
+        "skill": "intelligence",
+        "icon": "guild_library",
+        "zh": "公会图书馆",
+        "en": "Library",
+        "skillZh": "智力",
+        "skillEn": "Intelligence",
+        "hrid": "/guild_buildings/library"
+      },
+      {
+        "skill": "attack",
+        "icon": "guild_dojo",
+        "zh": "公会道场",
+        "en": "Dojo",
+        "skillZh": "攻击",
+        "skillEn": "Attack",
+        "hrid": "/guild_buildings/dojo"
+      },
+      {
+        "skill": "defense",
+        "icon": "guild_armory",
+        "zh": "公会军械库",
+        "en": "Armory",
+        "skillZh": "防御",
+        "skillEn": "Defense",
+        "hrid": "/guild_buildings/armory"
+      },
+      {
+        "skill": "melee",
+        "icon": "guild_gym",
+        "zh": "公会健身房",
+        "en": "Gym",
+        "skillZh": "近战",
+        "skillEn": "Melee",
+        "hrid": "/guild_buildings/gym"
+      },
+      {
+        "skill": "ranged",
+        "icon": "guild_archery_range",
+        "zh": "公会射箭场",
+        "en": "Archery Range",
+        "skillZh": "远程",
+        "skillEn": "Ranged",
+        "hrid": "/guild_buildings/archery_range"
+      },
+      {
+        "skill": "magic",
+        "icon": "guild_mystical_study",
+        "zh": "公会神秘研究室",
+        "en": "Mystical Study",
+        "skillZh": "魔法",
+        "skillEn": "Magic",
+        "hrid": "/guild_buildings/mystical_study"
+      }
+    ],
     "keys": [
       "milking",
       "foraging",
@@ -299,7 +513,7 @@
       "milking",
       "foraging",
       "woodcutting",
-      "cheesmithing",
+      "cheesesmithing",
       "crafting",
       "tailoring",
       "cooking",
@@ -316,15 +530,173 @@
       "ranged",
       "magic"
     ],
-    "maxLevel": 50
+    "icons": {
+      "milking": "guild_dairy_barn",
+      "foraging": "guild_garden",
+      "woodcutting": "guild_log_shed",
+      "cheesesmithing": "guild_forge",
+      "crafting": "guild_workshop",
+      "tailoring": "guild_sewing_parlor",
+      "cooking": "guild_kitchen",
+      "brewing": "guild_brewery",
+      "alchemy": "guild_laboratory",
+      "enhancing": "guild_observatory",
+      "stamina": "guild_dining_room",
+      "intelligence": "guild_library",
+      "attack": "guild_dojo",
+      "defense": "guild_armory",
+      "melee": "guild_gym",
+      "ranged": "guild_archery_range",
+      "magic": "guild_mystical_study"
+    },
+    "skillingTrialSlotsPerLevel": 2,
+    "combatTrialSlotsPerLevel": 2,
+    "skillingTrialBaseCap": 20,
+    "combatTrialBaseCap": 40,
+    "utilityKeys": [
+      "guild_hall",
+      "builders_hall",
+      "treasury",
+      "archives",
+      "skilling_encampment",
+      "combat_encampment"
+    ],
+    "hridToKey": {
+      "guild_hall": "guild_hall",
+      "builders_hall": "builders_hall",
+      "treasury": "treasury",
+      "archives": "archives",
+      "skilling_encampment": "skilling_encampment",
+      "combat_encampment": "combat_encampment",
+      "dairy_barn": "milking",
+      "garden": "foraging",
+      "log_shed": "woodcutting",
+      "forge": "cheesesmithing",
+      "workshop": "crafting",
+      "sewing_parlor": "tailoring",
+      "kitchen": "cooking",
+      "brewery": "brewing",
+      "laboratory": "alchemy",
+      "observatory": "enhancing",
+      "dining_room": "stamina",
+      "library": "intelligence",
+      "dojo": "attack",
+      "armory": "defense",
+      "gym": "melee",
+      "archery_range": "ranged",
+      "mystical_study": "magic"
+    }
   },
   "guildShrine": {
+    "maxLevel": 20,
     "keys": [
-      "power",
+      "force",
       "tempo",
-      "builder"
+      "spirit",
+      "rarity",
+      "scholar"
     ],
-    "maxLevel": 50
+    "icons": {
+      "force": "guild_shrine_force",
+      "tempo": "guild_shrine_tempo",
+      "spirit": "guild_shrine_spirit",
+      "rarity": "guild_shrine_rarity",
+      "scholar": "guild_shrine_scholar"
+    },
+    "defs": [
+      {
+        "key": "force",
+        "icon": "guild_shrine_force",
+        "zh": "力量",
+        "en": "Force",
+        "buffHrid": "/guild_buffs/force_skilling",
+        "type": "efficiency",
+        "flatPerLevel": 0.005,
+        "affectsTrial": true,
+        "effectZh": "效率 +0.5%/级",
+        "effectEn": "Efficiency +0.5%/lv",
+        "combatZh": "伤害 +0.3%/级",
+        "combatEn": "Damage +0.3%/lv"
+      },
+      {
+        "key": "tempo",
+        "icon": "guild_shrine_tempo",
+        "zh": "节奏",
+        "en": "Tempo",
+        "buffHrid": "/guild_buffs/tempo_skilling",
+        "type": "action_speed",
+        "flatPerLevel": 0.005,
+        "affectsTrial": true,
+        "effectZh": "动作速度 +0.5%/级",
+        "effectEn": "Action Speed +0.5%/lv",
+        "combatZh": "攻击/施法速度 +0.4%/级",
+        "combatEn": "Attack/Cast Speed +0.4%/lv"
+      },
+      {
+        "key": "spirit",
+        "icon": "guild_shrine_spirit",
+        "zh": "精神",
+        "en": "Spirit",
+        "buffHrid": "/guild_buffs/spirit_skilling",
+        "type": "essence_find",
+        "flatPerLevel": 0.02,
+        "affectsTrial": false,
+        "effectZh": "精华掉率 +2%/级",
+        "effectEn": "Essence Find +2%/lv",
+        "combatZh": "生命/法力 +1%/级",
+        "combatEn": "Max HP/MP +1%/lv"
+      },
+      {
+        "key": "rarity",
+        "icon": "guild_shrine_rarity",
+        "zh": "稀有",
+        "en": "Rarity",
+        "buffHrid": "/guild_buffs/rarity_skilling",
+        "type": "rare_find",
+        "flatPerLevel": 0.01,
+        "affectsTrial": false,
+        "effectZh": "稀有掉率 +1%/级",
+        "effectEn": "Rare Find +1%/lv",
+        "combatZh": "稀有掉率 +1%/级",
+        "combatEn": "Rare Find +1%/lv"
+      },
+      {
+        "key": "scholar",
+        "icon": "guild_shrine_scholar",
+        "zh": "学者",
+        "en": "Scholar",
+        "buffHrid": "/guild_buffs/scholar_skilling",
+        "type": "wisdom",
+        "flatPerLevel": 0.005,
+        "affectsTrial": false,
+        "effectZh": "智慧(经验) +0.5%/级",
+        "effectEn": "Wisdom (XP) +0.5%/lv",
+        "combatZh": "智慧(经验) +0.5%/级",
+        "combatEn": "Wisdom (XP) +0.5%/lv"
+      }
+    ],
+    "skillingBuffs": {
+      "force": {
+        "type": "efficiency",
+        "flatPerLevel": 0.005
+      },
+      "tempo": {
+        "type": "action_speed",
+        "flatPerLevel": 0.005
+      },
+      "spirit": {
+        "type": "essence_find",
+        "flatPerLevel": 0.02
+      },
+      "rarity": {
+        "type": "rare_find",
+        "flatPerLevel": 0.01
+      },
+      "scholar": {
+        "type": "wisdom",
+        "flatPerLevel": 0.005
+      }
+    }
   },
   "embeddedClientData": {
     "houseRoomDetailMap": {

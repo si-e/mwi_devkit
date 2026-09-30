@@ -189,6 +189,16 @@ h2 { font-size:16px; margin:10px 0 8px; color:var(--text-muted); }
 .global-buff-item input { width:48px; padding:2px 6px; border:1px solid var(--border); border-radius:3px; background:var(--input-bg); color:var(--text); font-size:12px; text-align:center; }
 .global-buff-item input:focus { outline:none; border-color:var(--accent); }
 .global-buff-item .global-buff-unit { color:var(--text-faint); font-size:11px; }
+.global-buff-item.is-utility { opacity:.85; }
+.global-buff-item.is-inactive { opacity:.55; }
+.global-buff-item.is-inactive .global-buff-label { text-decoration:line-through; }
+.global-buff-item.is-life { border-color:var(--border); }
+.global-buff-item.is-combat { opacity:.8; }
+.global-buff-tag { font-size:10px; line-height:1; color:var(--accent); border:1px solid var(--accent); border-radius:3px; padding:2px 4px; }
+.global-buff-group-label { font-size:11px; color:var(--text-faint); align-self:center; }
+.global-buff-subhint { font-size:11px; font-weight:400; color:var(--text-faint); }
+.global-buff-sep { width:1px; align-self:stretch; min-height:20px; background:var(--border); margin:0 4px; }
+.personal-shrine-badge { display:block; font-size:10px; color:var(--text-faint); margin-top:2px; }
 
 /* Trial Config */
 .trial-section { padding:10px 20px; }
@@ -205,6 +215,8 @@ h2 { font-size:16px; margin:10px 0 8px; color:var(--text-muted); }
 .trial-skill-name { font-size:12px; color:var(--text-muted); }
 .trial-max-row { display:flex; align-items:center; gap:6px; font-size:12px; }
 .trial-max-row input { width:50px; padding:2px 4px; border:1px solid var(--border); border-radius:3px; font-size:12px; background:var(--input-bg); color:var(--text); }
+.trial-max-value { font-weight:600; color:var(--text); }
+.trial-max-hint { font-size:10px; color:var(--text-faint); border:1px solid var(--border); border-radius:3px; padding:1px 4px; }
 .trial-member-list { max-height:100px; overflow-y:auto; border:1px solid var(--list-border); border-radius:4px; padding:4px; background:var(--list-bg); font-size:12px; }
 .trial-member-list:empty::after { content:attr(data-empty); color:var(--text-faint); display:block; text-align:center; padding:10px; }
 .trial-member-item { padding:2px 6px; border-radius:3px; display:flex; justify-content:space-between; }
@@ -228,6 +240,12 @@ table.member-table td.name-cell { text-align:left; }
 table.member-table td input { width:100%; border:1px solid transparent; background:transparent; font-size:13px; padding:2px 4px; border-radius:3px; color:var(--text); }
 table.member-table td input:focus { border-color:var(--accent); background:var(--input-bg); outline:none; }
 table.member-table td.skill-input input { width:52px; text-align:center; }
+/* 个人神龛列：与技能列同宽；不影响试炼的 3 项置灰 */
+table.member-table th.shrine-col { min-width:52px; }
+table.member-table th.shrine-col svg { width:20px; height:20px; vertical-align:middle; }
+table.member-table th.shrine-col.is-inactive { opacity:.55; }
+table.member-table td.shrine-input.is-inactive { opacity:.55; }
+table.member-table td.shrine-input.is-inactive input { color:var(--text-faint); }
 table.member-table tr:hover { background:var(--table-hover); }
 table.member-table td.assign-cell { font-weight:600; font-size:12px; }
 table.member-table td.assign-cell svg { width:22px; height:22px; }
@@ -305,6 +323,7 @@ const I18N = {
     addMember:'添加成员', share:'共享设置', importData:'导入',
     exportScriptTitle:'下载油猴脚本，自动采集公会成员数据导出为 JSON',
     calculate:'计算最优分配', assignCol:'分配', nameCol:'角色名', maxMembers:'人数上限',
+    trialSlotsAuto:'由生活营地决定', trialSlotsFromCamp:'生活营地 Lv{level}：{base} + {level}×{per} = {cap}',
     noAssign:'(暂无分配)', noMembers:'暂无成员数据，请添加成员或导入 JSON',
     totalFinalLv:'总最终等级', totalPasses:'总通关', assigned:'已分配', unassigned:'未分配',
     deleteBtn:'删', selectEquip:'选择装备', searchEquip:'搜索装备...',
@@ -322,10 +341,14 @@ const I18N = {
     trial:'试炼', language:'中/EN', theme:'🌙',
     globalBuffs:'全局加成',
     globalBuffsTip:'手动输入你所在服务器/账号的社区大厅全局 buff 等级：0 = 无 buff，1~20 级启用。加成 = 19.5 + 等级×0.5（%），仅本地保存，每个玩家按自己实际情况填。',
-    guildBuildings:'公会建筑', guildBuildingsTip:'生活和战斗每个技能对应一座房子，每级 +2 有效等级（仅本地保存，不影响他人，不影响试炼分配逻辑）。',
-    guildShrines:'公会神龛', guildShrinesTip:'力量每级 +0.5% 效率，节奏每级 +0.5% 行动速度，建造者殿堂每级 +2% 公会代币（仅本地保存）。',
-    buildingLabels:['挤奶','采摘','伐木','奶酪锻造','制作','缝纫','烹饪','冲泡','炼金','强化','耐力','智力','攻击','防御','近战','远程','魔法'],
-    shrineLabels:['力量','节奏','建造者殿堂'],
+    guildBuildings:'公会建筑', guildBuildingsTip:'对齐游戏 23 座建筑（上限 20 级），仅在本公会试炼期间生效。生活类/战斗类建筑为对应技能提供 +2 有效等级；功能建筑不影响试炼层数。建筑等级为公会全局，会随共享数据一起上传。',
+    guildShrinePerMember:'神龛(个人)', guildShrinePerMemberTip:'力量/节奏神龛是「个人增益」（公会商店购买，上限受公会神龛等级限制），逐人填写，随共享数据一起上传。官方每级数值：力量 效率+0.5%、节奏 动作速度+0.5%、精神 精华掉率+2%、稀有 稀有掉率+1%、学者 智慧+0.5%。只有 力量/节奏 影响试炼层数。',
+    guildBuildingsUtility:'功能建筑', guildBuildingsLife:'生活类建筑', guildBuildingsCombat:'战斗类建筑',
+    guildBuildingsShared:'公会全局 · 随共享上传',
+    shrineAffectsTrial:'影响试炼层数', shrineNotAffectsTrial:'不影响试炼层数',
+    shrineCol:'神龛',
+    guildHallTip:'增加公会成员上限', buildersHallTip:'提高公会点数获取', treasuryTip:'提高公会代币奖励',
+    archivesTip:'提高公会经验获取', skillingCampTip:'参加生活试炼人数 +2/级（人数上限 = 20 + 等级×2）', combatCampTip:'参加战斗试炼人数 +2/级（暂未模拟战斗试炼）',
     buffGathering:'采集数量', buffGatheringTip:'仅对采集类技能（挤奶/采摘/伐木）的双倍产出概率生效；0=无，1~20 级，加成 = 19.5 + 等级×0.5（%）。',
     buffProduction:'生产效率', buffProductionTip:'仅对生产类技能（奶酪锻造/制作/缝纫/烹饪/冲泡/炼金）的效率生效；0=无，1~20 级，加成 = 19.5 + 等级×0.5（%）。',
     buffEnhancingSpeed:'强化速度', buffEnhancingSpeedTip:'仅对强化技能的动作速度生效；0=无，1~20 级，加成 = 19.5 + 等级×0.5（%）。',
@@ -339,6 +362,7 @@ const I18N = {
     addMember:'Add Member', share:'Share', importData:'Import',
     exportScriptTitle:'Download userscript to auto-collect guild member data as JSON',
     calculate:'Calculate', assignCol:'Assign', nameCol:'Name', maxMembers:'Max',
+    trialSlotsAuto:'set by Skilling Encampment', trialSlotsFromCamp:'Skilling Encampment Lv{level}: {base} + {level}×{per} = {cap}',
     noAssign:'(None)', noMembers:'No member data. Add members or import JSON.',
     totalFinalLv:'Total Final Lv', totalPasses:'Total Passes', assigned:'Assigned', unassigned:'Unassigned',
     deleteBtn:'Del', selectEquip:'Select Equipment', searchEquip:'Search equipment...',
@@ -356,10 +380,14 @@ const I18N = {
     trial:'Trial', language:'中/EN', theme:'☀️',
     globalBuffs:'Global Buffs',
     globalBuffsTip:'Enter your server/account community-hall global buff level: 0 = none, 1~20 = active. Bonus = 19.5 + level×0.5 (%), stored locally only.',
-    guildBuildings:'Guild Buildings', guildBuildingsTip:'Each skill has a house; every level gives +2 effective levels (stored locally only, does not affect others or assignment).',
-    guildShrines:'Guild Shrines', guildShrinesTip:'Power: +0.5% efficiency/level. Tempo: +0.5% action speed/level. Builder Hall: +2% guild tokens/level (stored locally only).',
-    buildingLabels:['Milking','Foraging','Woodcutting','Cheesesmithing','Crafting','Tailoring','Cooking','Brewing','Alchemy','Enhancing','Stamina','Intelligence','Attack','Defense','Melee','Ranged','Magic'],
-    shrineLabels:['Power','Tempo','Builder Hall'],
+    guildBuildings:'Guild Buildings', guildBuildingsTip:'Aligned with the 23 in-game buildings (max 20), active only during your own guild trials. Life/combat buildings give the matching skill +2 effective levels; utility buildings do not affect trial tiers. Building levels are guild-wide and are uploaded with the shared data.',
+    guildShrinePerMember:'Shrines (personal)', guildShrinePerMemberTip:'Force/Tempo shrine buffs are PERSONAL buffs (bought in the Guild Shop, capped by the guild shrine level). Fill them per member; they are uploaded with the shared data. Official per-level values: Force efficiency +0.5%, Tempo action speed +0.5%, Spirit essence find +2%, Rarity rare find +1%, Scholar wisdom +0.5%. Only Force/Tempo affect trial tiers.',
+    guildBuildingsUtility:'Utility', guildBuildingsLife:'Life', guildBuildingsCombat:'Combat',
+    guildBuildingsShared:'Guild-wide · uploaded when shared',
+    shrineAffectsTrial:'affects trial tiers', shrineNotAffectsTrial:'does not affect trial tiers',
+    shrineCol:'Shrine',
+    guildHallTip:'Raises max members', buildersHallTip:'Boosts Guild Points', treasuryTip:'Boosts Guild Tokens',
+    archivesTip:'Boosts Guild Experience', skillingCampTip:'Skilling trial slots +2/lv (cap = 20 + level×2)', combatCampTip:'Combat trial slots +2/lv (combat trials not simulated yet)',
     buffGathering:'Gathering Qty', buffGatheringTip:'Applies only to gathering skills (Milking/Foraging/Woodcutting) as double-drop chance. 0=none, 1~20, bonus = 19.5 + level×0.5 (%).',
     buffProduction:'Production Eff', buffProductionTip:'Applies only to production skills (Cheesesmithing/Crafting/Tailoring/Cooking/Brewing/Alchemy) as efficiency. 0=none, 1~20, bonus = 19.5 + level×0.5 (%).',
     buffEnhancingSpeed:'Enhancing Spd', buffEnhancingSpeedTip:'Applies only to the Enhancing skill as action speed. 0=none, 1~20, bonus = 19.5 + level×0.5 (%).',
@@ -399,6 +427,8 @@ const BASE_TOTAL_PT = 40000, PT_GROWTH = 4000, MAX_PASS_GUARD = 10000, NUM_TRIAL
 // __EQUIP_ICONS_PLACEHOLDER__
 
 // === State ===
+// 说明：神龛等级是「个人属性」，直接挂在每个成员身上（member.shrines），不再有全局输入。
+//      公会建筑等级是「公会全局」，放在 state.guildBuildings，随共享数据一起上传。
 let state = {
   lang: 'zh',
   theme: 'light',
@@ -412,8 +442,8 @@ let state = {
   isShared: false,
   deletedIds: [],
   globalBuffs: { gathering: 0, production: 0, enhancingSpeed: 0 },
-  guildBuildings: GUILD_BUILDING_KEYS.reduce((o,k)=>(o[k]=0,o),{}),
-  guildShrines: { power:0, tempo:0, builder:0 }
+  guildBuildings: (typeof GUILD_BUILDING_ALL_KEYS !== 'undefined' ? GUILD_BUILDING_ALL_KEYS : GUILD_BUILDING_KEYS).reduce((o,k)=>(o[k]=0,o),{}),
+  guildBuildingsTs: 0
 };
 let pickerState = { memberId:null, slot:null, iconId:null, enhance:0 };
 
@@ -708,22 +738,63 @@ function extractHouseBuffBonuses(person, skillId) {
   return out;
 }
 
-// 公会建筑：生活/战斗每座房子每级 +2 有效等级（仅生活技能影响试炼）。
+// 公会建筑（公会全局）：生活类/战斗类建筑每级 +GUILD_BUILDING_SKILL_PER_LEVEL 有效等级（仅在本公会试炼期间生效）。
+// 6 座功能建筑（成员上限/点数/代币/经验/报名名额）不影响试炼层数。
 function applyGuildBuilding(combined, skillId) {
   const out = { skillLevelBonus:0 };
   const buildings = state.guildBuildings || {};
   const lv = Math.max(0, Math.min(GUILD_BUILDING_MAX_LEVEL, Math.floor(Number(buildings[skillId]) || 0)));
-  if (lv > 0) { combined.skillLevelBonus += lv * 2; out.skillLevelBonus = lv * 2; }
+  if (lv > 0) { const amt = lv * GUILD_BUILDING_SKILL_PER_LEVEL; combined.skillLevelBonus += amt; out.skillLevelBonus = amt; }
   return out;
 }
-// 公会神龛：力量 +0.5% 效率/级，节奏 +0.5% 速度/级。
-function applyGuildShrine(combined) {
+// 生活试炼人数上限（对齐游戏客户端 partyCapForKind）：cap = 基准 20 + min(生活营地等级, 上限) × 每级人数 2。
+function skillingTrialCap() {
+  const lv = Math.max(0, Math.min(GUILD_BUILDING_MAX_LEVEL, Math.floor(Number((state.guildBuildings||{}).skilling_encampment) || 0)));
+  return GUILD_BUILDING_SKILLING_BASE_CAP + lv * GUILD_BUILDING_SKILLING_SLOTS_PER_LEVEL;
+}
+// 战斗试炼人数上限：cap = 基准 40 + min(战斗营地等级, 上限) × 每级人数 2（暂未模拟战斗试炼）。
+function combatTrialCap() {
+  const lv = Math.max(0, Math.min(GUILD_BUILDING_MAX_LEVEL, Math.floor(Number((state.guildBuildings||{}).combat_encampment) || 0)));
+  return GUILD_BUILDING_COMBAT_BASE_CAP + lv * GUILD_BUILDING_COMBAT_SLOTS_PER_LEVEL;
+}
+// 把派生的报名人数上限写回 trials（所有试炼槽位都是生活技能），保证算法用的是最新上限。
+function applyTrialCaps() {
+  if (!Array.isArray(state.trials)) return;
+  const cap = skillingTrialCap();
+  for (const cfg of state.trials) { cfg.max = cap; }
+}
+// 读取成员「个人」神龛增益等级：member.shrines（可直接编辑/上传），
+// 兼容导入数据里的 guildBuffLevelMap（键为 /guild_buffs/<shrine>_skilling）。
+function memberShrineLevel(person, shrineKey) {
+  if (!person) return 0;
+  const edited = person.shrines && person.shrines[shrineKey];
+  if (edited != null && edited !== '') return Math.max(0, Math.floor(Number(edited) || 0));
+  const map = person.guildBuffLevels;
+  if (map && typeof map === 'object') {
+    const needles = ['/guild_buffs/' + shrineKey + '_skilling', 'guild_buffs/' + shrineKey + '_skilling', shrineKey + '_skilling', '/guild_buffs/' + shrineKey, shrineKey];
+    for (const key of needles) {
+      if (map[key] != null) return Math.max(0, Math.floor(Number(map[key]) || 0));
+      if (map['/' + key] != null) return Math.max(0, Math.floor(Number(map['/' + key]) || 0));
+    }
+  }
+  return 0;
+}
+// 公会神龛：对齐游戏 5 神龛（力量/节奏/精神/稀有/学者），全部为「个人增益」，逐人读取。
+// 仅 force(效率 +0.5%/级)、tempo(动作速度 +0.5%/级) 影响试炼推演指标；
+// spirit(精华掉率)/rarity(稀有掉率)/scholar(智慧经验) 不影响层数，故不并入 combined。
+function applyGuildShrine(combined, person) {
   const out = { speedBonus:0, efficiencyBonus:0 };
-  const shrines = state.guildShrines || {};
-  const power = Math.max(0, Math.min(GUILD_SHRINE_MAX_LEVEL, Math.floor(Number(shrines.power) || 0)));
-  if (power > 0) { combined.efficiencyBonus += power * 0.005; out.efficiencyBonus = power * 0.005; }
-  const tempo = Math.max(0, Math.min(GUILD_SHRINE_MAX_LEVEL, Math.floor(Number(shrines.tempo) || 0)));
-  if (tempo > 0) { combined.speedBonus += tempo * 0.005; out.speedBonus = tempo * 0.005; }
+  const buffs = (typeof GUILD_SHRINE_SKILL_BUFFS !== 'undefined') ? GUILD_SHRINE_SKILL_BUFFS : {};
+  const defs = (typeof GUILD_SHRINE_DEFS !== 'undefined' && GUILD_SHRINE_DEFS.length) ? GUILD_SHRINE_DEFS
+    : GUILD_SHRINE_KEYS.map(k => ({ key:k, type:(buffs[k]||{}).type, flatPerLevel:(buffs[k]||{}).flatPerLevel, affectsTrial:(k==='force'||k==='tempo') }));
+  for (const def of defs) {
+    if (!def || !def.affectsTrial) continue;
+    const lv = Math.max(0, Math.min(GUILD_SHRINE_MAX_LEVEL, memberShrineLevel(person, def.key)));
+    if (lv <= 0) continue;
+    const amt = lv * (def.flatPerLevel || 0);
+    if (def.type === 'efficiency') { combined.efficiencyBonus += amt; out.efficiencyBonus += amt; }
+    else if (def.type === 'action_speed') { combined.speedBonus += amt; out.speedBonus += amt; }
+  }
   return out;
 }
 
@@ -761,7 +832,7 @@ function computePersonSkillMetrics(person, skillIdx) {
   b.speedBonus += houseB.speedBonus; b.efficiencyBonus += houseB.efficiencyBonus; b.successBonus += houseB.successBonus; b.gatheringBonus += houseB.gatheringBonus; b.skillLevelBonus += houseB.skillLevelBonus;
   // 公会建筑（有效等级）/ 公会神龛（效率/速度），本地输入项
   applyGuildBuilding(b, skillId);
-  applyGuildShrine(b);
+  applyGuildShrine(b, person);
   const baseLevel = Number(person.levels[skillIdx]||0);
   const effLevel = Math.max(0, baseLevel + (b.skillLevelBonus||0));
   const actionSeconds = BASE_ACTION_SEC / Math.max(0.05, 1+(b.speedBonus||0));
@@ -897,6 +968,14 @@ function renderTableHeader() {
   for (let s = 0; s < 10; s++) {
     html += '<th class="skill-col" title="'+skillLabel(s)+'">'+svgIcon(SKILL_KEYS[s],20,20)+'</th>';
   }
+  // 个人神龛 5 列（图标列头；力量/节奏影响试炼，其余置灰）
+  for (const d of shrineDefsList()) {
+    const lbl = (state.lang === 'en') ? d.en : d.zh;
+    const eff = (state.lang === 'en') ? d.effectEn : d.effectZh;
+    const tip = lbl + ': ' + eff + ' · ' + (d.affectsTrial ? t('shrineAffectsTrial') : t('shrineNotAffectsTrial'));
+    html += '<th class="shrine-col'+(d.affectsTrial ? '' : ' is-inactive')+'" title="'+escHtml(tip)+'">'
+      + svgIcon(d.icon || ('guild_shrine_'+d.key), 20, 20) + '</th>';
+  }
   for (let i = 0; i < EQUIP_TYPES.length; i++) {
     html += '<th class="equip-col">'+equipShortLabel(i)+'</th>';
   }
@@ -906,8 +985,10 @@ function renderTableHeader() {
 }
 function renderAll() {
   document.title = t('title');
+  applyTrialCaps();
   renderTableHeader();
   renderTrialCards();
+  renderGuildInputs();
   renderMemberTable();
   renderSummary();
   updateStaticText();
@@ -945,20 +1026,26 @@ function updateStaticText() {
     if (item) item.title = t(tipKey);
   }
   syncGlobalBuffInputs();
-  // 公会建筑 / 神龛 文案 + 提示 + 回填输入
+  // 公会建筑 文案 + 提示 + 回填输入
   const gbBTitle = document.getElementById('h3-guild-buildings');
   if (gbBTitle) gbBTitle.firstChild.textContent = t('guildBuildings') + ' ';
   const gbBHint = document.getElementById('guild-buildings-hint');
   if (gbBHint) gbBHint.title = t('guildBuildingsTip');
-  const gsTitle = document.getElementById('h3-guild-shrines');
-  if (gsTitle) gsTitle.firstChild.textContent = t('guildShrines') + ' ';
-  const gsHint = document.getElementById('guild-shrines-hint');
-  if (gsHint) gsHint.title = t('guildShrinesTip');
+  // 顶部建筑栏副标题（“公会全局 · 随共享上传”）
+  const gbShared = document.getElementById('guild-buildings-shared');
+  if (gbShared) gbShared.textContent = t('guildBuildingsShared');
   syncGuildInputs();
 }
 
 function renderTrialCards() {
   const container = document.getElementById('trial-cards');
+  applyTrialCaps();   // 人数上限始终由生活营地等级派生，保证显示与算法一致
+  const campLv = Math.max(0, Math.min(GUILD_BUILDING_MAX_LEVEL, Math.floor(Number((state.guildBuildings||{}).skilling_encampment) || 0)));
+  const capHtml = t('trialSlotsFromCamp')
+    .replace('{level}', campLv)
+    .replace('{base}', GUILD_BUILDING_SKILLING_BASE_CAP)
+    .replace('{per}', GUILD_BUILDING_SKILLING_SLOTS_PER_LEVEL)
+    .replace('{cap}', skillingTrialCap());
   container.innerHTML = state.trials.map((cfg, j) => {
     let memberListHtml = '';
     let resultHtml = '';
@@ -976,17 +1063,35 @@ function renderTrialCards() {
         '<div class="trial-skill-icon" onclick="openSkillPicker('+j+',this)">'+svgIcon(SKILL_KEYS[cfg.skill],36,36)+'</div>'+
         '<div class="trial-card-info"><div class="trial-card-title">'+t('trial')+' '+(j+1)+'</div><div class="trial-skill-name">'+skillLabel(cfg.skill)+'</div></div>'+
       '</div>'+
-      '<div class="trial-max-row"><label>'+t('maxMembers')+':</label><input type="number" value="'+cfg.max+'" min="1" max="80" onchange="updateTrialMax('+j+',this.value)"></div>'+
+      '<div class="trial-max-row"><label>'+t('maxMembers')+':</label><span class="trial-max-value">'+cfg.max+'</span>'+
+        '<span class="trial-max-hint" title="'+escHtml(capHtml)+'">'+t('trialSlotsAuto')+'</span></div>'+
       '<div class="trial-member-list" data-empty="'+t('noAssign')+'">'+memberListHtml+'</div>'+
       resultHtml+
     '</div>';
   }).join('');
 }
 
+function shrineDefsList() {
+  if (typeof GUILD_SHRINE_DEFS !== 'undefined' && GUILD_SHRINE_DEFS.length) return GUILD_SHRINE_DEFS;
+  const buffs = (typeof GUILD_SHRINE_SKILL_BUFFS !== 'undefined') ? GUILD_SHRINE_SKILL_BUFFS : {};
+  return GUILD_SHRINE_KEYS.map(k => ({ key:k, zh:k, en:k, icon:'guild_shrine_'+k,
+    type:(buffs[k]||{}).type, flatPerLevel:(buffs[k]||{}).flatPerLevel, affectsTrial:(k==='force'||k==='tempo') }));
+}
+function memberShrineBadgeText(p) {
+  const en = (state.lang === 'en');
+  const parts = [];
+  for (const d of shrineDefsList()) {
+    if (!d.affectsTrial) continue;
+    const lv = memberShrineLevel(p, d.key);
+    if (lv > 0) parts.push((en ? d.en : d.zh) + lv);
+  }
+  return parts.join(' ');
+}
+
 function renderMemberTable() {
   const tbody = document.getElementById('member-tbody');
   if (state.members.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="36" style="color:var(--text-faint);padding:20px">'+t('noMembers')+'</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="40" style="color:var(--text-faint);padding:20px">'+t('noMembers')+'</td></tr>';
     return;
   }
   tbody.innerHTML = state.members.map(p => {
@@ -1003,6 +1108,13 @@ function renderMemberTable() {
     for (let s = 0; s < 10; s++) {
       skillCells += '<td class="skill-input"><input type="number" value="'+(p.levels[s]||0)+'" min="0" max="999" onchange="updateSkillLevel('+p.id+','+s+',this.value)"></td>';
     }
+    // 个人神龛等级（5 项，逐人可编辑；力量/节奏影响试炼，其余不影响）
+    let shrineCells = '';
+    for (const d of shrineDefsList()) {
+      const cls = d.affectsTrial ? 'skill-input shrine-input' : 'skill-input shrine-input is-inactive';
+      shrineCells += '<td class="'+cls+'" title="'+escHtml((state.lang==='en'?d.en:d.zh)+': '+(state.lang==='en'?d.effectEn:d.effectZh)+' · '+(d.affectsTrial?t('shrineAffectsTrial'):t('shrineNotAffectsTrial')))+'">'
+        + '<input type="number" value="'+memberShrineLevel(p, d.key)+'" min="0" max="'+GUILD_SHRINE_MAX_LEVEL+'" onchange="updateMemberShrine('+p.id+',\''+d.key+'\',this.value)"></td>';
+    }
     let equipCells = '';
     for (let i = 0; i < EQUIP_TYPES.length; i++) {
       const slot = EQUIP_TYPES[i];
@@ -1015,8 +1127,8 @@ function renderMemberTable() {
     }
     return '<tr>'+
       '<td class="assign-cell '+assignClass+'">'+assignContent+'</td>'+
-      '<td class="name-cell"><input type="text" value="'+escHtml(p.name)+'" onchange="updateMemberName('+p.id+',this.value)"></td>'+
-      skillCells + equipCells +
+      '<td class="name-cell"><input type="text" value="'+escHtml(p.name)+'" onchange="updateMemberName('+p.id+',this.value)">'+personalShrineBadge(p)+'</td>'+
+      skillCells + shrineCells + equipCells +
       '<td><button class="btn btn-sm btn-danger" onclick="removeMember('+p.id+')">'+t('deleteBtn')+'</button></td>'+
     '</tr>';
   }).join('');
@@ -1040,6 +1152,15 @@ function renderAssignmentResults() {
 
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// 成员名下方小徽标：显示该成员的力量/节奏神龛等级（影响试炼的那两项），全 0 时不显示
+function personalShrineBadge(p) {
+  const txt = memberShrineBadgeText(p);
+  if (!txt) return '';
+  const en = (state.lang === 'en');
+  return '<span class="personal-shrine-badge" title="'+escHtml(en?'Personal shrine buffs (Force/Tempo)':'个人神龛增益 (力量/节奏)')+'">'
+    + escHtml((en?'Shrine ':'神龛 ') + txt) + '</span>';
 }
 
 // === Theme & Language ===
@@ -1076,55 +1197,77 @@ function syncGlobalBuffInputs() {
     if (el && el !== document.activeElement) el.value = Number(gb[k] || 0);
   }
 }
-// 公会建筑 / 神龛：本地输入项，渲染 + 同步 + 持久化
+// 公会建筑（23 座：6 功能 + 17 试炼）/ 神龛（5）：本地输入项，渲染 + 同步 + 持久化
+function guildBuildingAllKeys() {
+  return (typeof GUILD_BUILDING_ALL_KEYS !== 'undefined') ? GUILD_BUILDING_ALL_KEYS : GUILD_BUILDING_KEYS;
+}
 function renderGuildInputs() {
+  const en = (state.lang === 'en');
+  const nm = (zh, e) => en ? (e || zh || '') : (zh || e || '');
+  const iconRef = (id) => '<svg class="global-buff-icon" viewBox="0 0 40 40"><use xlink:href="#'+id+'"></use></svg>';
+  const lvlInput = (id, cb) => '<input type="number" min="0" max="'+GUILD_BUILDING_MAX_LEVEL+'" step="1" id="'+id+'" onchange="'+cb+'">';
+  const item = (iconId, label, tip, key, extraCls) =>
+    '<label class="global-buff-item'+(extraCls||'')+'" title="'+escHtml(tip)+'">'
+      + iconRef(iconId) + '<span class="global-buff-label">'+escHtml(label)+'</span>'
+      + lvlInput('gb-building-input-'+key, "updateGuildBuilding('"+key+"', this.value)")
+      + '<span class="global-buff-unit">'+t('levelUnit')+'</span></label>';
+
   const bb = document.getElementById('guild-buildings-bar');
   if (bb) {
-    const labels = t('buildingLabels') || GUILD_BUILDING_KEYS;
-    bb.innerHTML = GUILD_BUILDING_KEYS.map((k, i) => {
-      const lbl = labels[i] || k;
-      return '<label class="global-buff-item" title="'+escHtml(t('guildBuildingsTip'))+'">'
-        + '<span class="global-buff-label">'+escHtml(lbl)+'</span>'
-        + '<input type="number" min="0" max="'+GUILD_BUILDING_MAX_LEVEL+'" step="1" id="gb-building-input-'+k+'" onchange="updateGuildBuilding(\''+k+'\', this.value)">'
-        + '<span class="global-buff-unit">'+t('levelUnit')+'</span></label>';
-    }).join('');
-  }
-  const sb = document.getElementById('guild-shrines-bar');
-  if (sb) {
-    const labels = t('shrineLabels') || GUILD_SHRINE_KEYS;
-    sb.innerHTML = GUILD_SHRINE_KEYS.map((k, i) => {
-      const lbl = labels[i] || k;
-      return '<label class="global-buff-item" title="'+escHtml(t('guildShrinesTip'))+'">'
-        + '<span class="global-buff-label">'+escHtml(lbl)+'</span>'
-        + '<input type="number" min="0" max="'+GUILD_SHRINE_MAX_LEVEL+'" step="1" id="gb-shrine-input-'+k+'" onchange="updateGuildShrine(\''+k+'\', this.value)">'
-        + '<span class="global-buff-unit">'+t('levelUnit')+'</span></label>';
-    }).join('');
+    const util = (typeof GUILD_BUILDING_UTILITY !== 'undefined') ? GUILD_BUILDING_UTILITY : [];
+    const trial = (typeof GUILD_BUILDING_TRIAL !== 'undefined') ? GUILD_BUILDING_TRIAL : [];
+    const lifeKeys = (typeof GUILD_BUILDING_LIFE_KEYS !== 'undefined') ? GUILD_BUILDING_LIFE_KEYS : [];
+    const combatKeys = (typeof GUILD_BUILDING_COMBAT_KEYS !== 'undefined') ? GUILD_BUILDING_COMBAT_KEYS : [];
+    const parts = [];
+    // 第一块：功能建筑（6 座，公会全局效果，不影响试炼层数）
+    if (util.length) {
+      parts.push('<span class="global-buff-group-label">'+escHtml(t('guildBuildingsUtility'))+'</span>');
+      parts.push(util.map(u => {
+        const iconId = (GUILD_BUILDING_ICONS && GUILD_BUILDING_ICONS[u.key]) || u.icon;
+        const tip = nm(u.zh,u.en) + ' · ' + nm(u.effectZh,u.effectEn) + ' — ' + t('guildBuildingsTip');
+        return item(iconId, nm(u.zh,u.en), tip, u.key, ' is-utility');
+      }).join(''));
+      parts.push('<span class="global-buff-sep"></span>');
+    }
+    // 第二块：生活类建筑（10 座，对应生活技能，影响生活试炼）
+    const life = trial.filter(td => lifeKeys.indexOf(td.skill) >= 0);
+    if (life.length) {
+      parts.push('<span class="global-buff-group-label">'+escHtml(t('guildBuildingsLife'))+'</span>');
+      parts.push(life.map(td => {
+        const iconId = (GUILD_BUILDING_ICONS && GUILD_BUILDING_ICONS[td.skill]) || td.icon;
+        const tip = nm(td.zh,td.en) + ' · ' + nm(td.skillZh,td.skillEn) + ' +' + GUILD_BUILDING_SKILL_PER_LEVEL + ' — ' + t('guildBuildingsTip');
+        return item(iconId, nm(td.zh,td.en), tip, td.skill, ' is-life');
+      }).join(''));
+      parts.push('<span class="global-buff-sep"></span>');
+    }
+    // 第三块：战斗类建筑（7 座，对应战斗属性；暂未模拟战斗试炼）
+    const combat = trial.filter(td => combatKeys.indexOf(td.skill) >= 0);
+    if (combat.length) {
+      parts.push('<span class="global-buff-group-label">'+escHtml(t('guildBuildingsCombat'))+'</span>');
+      parts.push(combat.map(td => {
+        const iconId = (GUILD_BUILDING_ICONS && GUILD_BUILDING_ICONS[td.skill]) || td.icon;
+        const tip = nm(td.zh,td.en) + ' · ' + nm(td.skillZh,td.skillEn) + ' +' + GUILD_BUILDING_SKILL_PER_LEVEL + ' — ' + t('guildBuildingsTip');
+        return item(iconId, nm(td.zh,td.en), tip, td.skill, ' is-combat');
+      }).join(''));
+    }
+    bb.innerHTML = parts.join('');
   }
 }
 function syncGuildInputs() {
   const gb = state.guildBuildings || {};
-  for (const k of GUILD_BUILDING_KEYS) {
+  for (const k of guildBuildingAllKeys()) {
     const el = document.getElementById('gb-building-input-'+k);
     if (el && el !== document.activeElement) el.value = Number(gb[k] || 0);
   }
-  const gs = state.guildShrines || {};
-  for (const k of GUILD_SHRINE_KEYS) {
-    const el = document.getElementById('gb-shrine-input-'+k);
-    if (el && el !== document.activeElement) el.value = Number(gs[k] || 0);
-  }
 }
 function updateGuildBuilding(key, val) {
-  if (!state.guildBuildings) state.guildBuildings = GUILD_BUILDING_KEYS.reduce((o,k)=>(o[k]=0,o),{});
+  if (!state.guildBuildings) state.guildBuildings = guildBuildingAllKeys().reduce((o,k)=>(o[k]=0,o),{});
   state.guildBuildings[key] = Math.max(0, Math.min(GUILD_BUILDING_MAX_LEVEL, Math.floor(Number(val) || 0)));
-  try { localStorage.setItem('mwi_guild_buildings', JSON.stringify(state.guildBuildings)); } catch(e) {}
-  if (state.members && state.members.length > 0 && state.result) calculate(); else { renderMemberTable(); renderSummary(); }
-  syncGuildInputs();
-}
-function updateGuildShrine(key, val) {
-  if (!state.guildShrines) state.guildShrines = { power:0, tempo:0, builder:0 };
-  state.guildShrines[key] = Math.max(0, Math.min(GUILD_SHRINE_MAX_LEVEL, Math.floor(Number(val) || 0)));
-  try { localStorage.setItem('mwi_guild_shrines', JSON.stringify(state.guildShrines)); } catch(e) {}
-  if (state.members && state.members.length > 0 && state.result) calculate(); else { renderMemberTable(); renderSummary(); }
+  state.guildBuildingsTs = Date.now();
+  // 建筑等级是公会全局，随共享数据一起上传
+  saveData();
+  applyTrialCaps();
+  if (state.members && state.members.length > 0 && state.result) calculate(); else { renderTrialCards(); renderMemberTable(); renderSummary(); }
   syncGuildInputs();
 }
 
@@ -1148,28 +1291,22 @@ function loadPrefs() {
       } catch(e) {}
     }
   } catch(e) {}
-  const rawGBuild = localStorage.getItem('mwi_guild_buildings');
-  if (rawGBuild) {
-    try {
+  // 兼容：旧版本曾把公会建筑/神龛存在 localStorage（mwi_guild_buildings / mwi_guild_shrines）。
+  // 现在建筑等级随共享数据（bin / 本地 state）一起保存，神龛等级属于成员个人，故只做一次性迁移。
+  try {
+    const rawGBuild = localStorage.getItem('mwi_guild_buildings');
+    if (rawGBuild && (!state.guildBuildingsTs || state.guildBuildingsTs === 0)) {
       const obj = JSON.parse(rawGBuild);
       if (obj && typeof obj === 'object') {
-        state.guildBuildings = GUILD_BUILDING_KEYS.reduce((o,k)=>(o[k]=Math.max(0,Math.floor(Number(obj[k])||0)),o),{});
+        const keys = guildBuildingAllKeys();
+        if (keys.some(k => Number(obj[k]) > 0)) {
+          state.guildBuildings = keys.reduce((o,k)=>(o[k]=Math.max(0,Math.floor(Number(obj[k])||0)),o),{});
+          state.guildBuildingsTs = Date.now();
+        }
       }
-    } catch(e) {}
-  }
-  const rawGShr = localStorage.getItem('mwi_guild_shrines');
-  if (rawGShr) {
-    try {
-      const obj = JSON.parse(rawGShr);
-      if (obj && typeof obj === 'object') {
-        state.guildShrines = {
-          power: Math.max(0, Math.floor(Number(obj.power)||0)),
-          tempo: Math.max(0, Math.floor(Number(obj.tempo)||0)),
-          builder: Math.max(0, Math.floor(Number(obj.builder)||0)),
-        };
-      }
-    } catch(e) {}
-  }
+    }
+    localStorage.removeItem('mwi_guild_shrines');
+  } catch(e) {}
   document.documentElement.setAttribute('data-theme', state.theme);
 }
 
@@ -1318,16 +1455,22 @@ function updateSkillLevel(id, skillIdx, value) {
   const p = state.members.find(p => p.id === id);
   if (p) { p.levels[skillIdx] = Math.max(0, parseInt(value)||0); p._ts = Date.now(); saveData(); }
 }
-function updateTrialMax(trialIdx, value) {
-  state.trials[trialIdx].max = Math.max(1, parseInt(value)||20);
-  state.trials[trialIdx]._ts = Date.now();
+// 个人神龛等级（力量/节奏/精神/稀有/学者），逐人可编辑，随共享数据上传
+function updateMemberShrine(id, key, value) {
+  const p = state.members.find(p => p.id === id);
+  if (!p) return;
+  if (!p.shrines) p.shrines = {};
+  p.shrines[key] = Math.max(0, Math.min(GUILD_SHRINE_MAX_LEVEL, Math.floor(Number(value) || 0)));
+  p._ts = Date.now();
   saveData();
+  if (state.result) calculate(); else { renderMemberTable(); renderSummary(); }
 }
 
 // === Calculate ===
 function calculate() {
   if (state.members.length === 0) { alert(t('addMembersFirst')); return; }
   const t0 = performance.now();
+  applyTrialCaps();   // 试炼人数上限由生活营地等级派生
   state.result = runAssignment(state.members, state.trials);
   state.assignment = state.result.assignment;
   const t1 = performance.now();
@@ -1371,6 +1514,20 @@ function parseMemberFromProfile(profile) {
   if (profile.achievements) out.achievements = profile.achievements;
   if (profile.houseActionTypeBuffsDict) out.houseActionTypeBuffsDict = profile.houseActionTypeBuffsDict;
   if (profile.houseRoomLevels) out.houseRoomLevels = profile.houseRoomLevels;
+  if (profile.characterHouseRoomMap) out.characterHouseRoomMap = profile.characterHouseRoomMap;
+  // 个人神龛增益等级：游戏的共享资料里带 guildBuffLevelMap（键 /guild_buffs/<shrine>_skilling）。
+  // 这是「个人属性」，直接物化成可编辑的 shrines 字段（同时保留原始 map 以便对照）。
+  if (profile.guildBuffLevelMap) {
+    out.guildBuffLevels = profile.guildBuffLevelMap;
+    out.shrines = {};
+    for (const d of shrineDefsList()) out.shrines[d.key] = memberShrineLevel({ guildBuffLevels: profile.guildBuffLevelMap }, d.key);
+  } else {
+    out.shrines = {};
+    for (const d of shrineDefsList()) out.shrines[d.key] = 0;
+  }
+  // 公会建筑等级（公会全局）：导出脚本可能把 guild_updated 里的 guildBuildingLevelMap 挂在成员对象上
+  if (profile._guildBuildingLevelMap) out._guildBuildingLevelMap = profile._guildBuildingLevelMap;
+  if (profile.guildBuildingLevelMap) out._guildBuildingLevelMap = profile.guildBuildingLevelMap;
   return out;
 }
 function importJson() {
@@ -1400,7 +1557,9 @@ function importJson() {
       if (newMembers.length > 0) {
         state.members = newMembers;
         state.deletedIds = [];
-        const data = JSON.stringify({ guild: state.guild, members: state.members, trials: state.trials, deletedIds: state.deletedIds });
+        applyImportedGuildBuildings(membersData);   // 若导出数据带公会建筑等级（guild_updated），自动预填
+        applyTrialCaps();
+        const data = JSON.stringify(sharedPayload());
         try { localStorage.setItem(getStorageKey(), data); } catch(e) {}
         if (state.isShared && state.binId && state.encKey) {
           await forcePushToBin(data);   // 立即全量覆盖 bin，不走合并，防止被旧数据覆盖
@@ -1419,18 +1578,58 @@ function importJson() {
   input.click();
 }
 
+// 导出数据里若带公会建筑等级（/guild_buildings/* 键 = 建筑 hrid），自动预填到 state.guildBuildings
+function applyImportedGuildBuildings(profiles) {
+  if (!Array.isArray(profiles)) profiles = [profiles];
+  const keys = guildBuildingAllKeys();
+  const hmap = (typeof GUILD_BUILDING_HRID_TO_KEY !== 'undefined') ? GUILD_BUILDING_HRID_TO_KEY : {};
+  for (const prof of profiles) {
+    const map = prof && (prof._guildBuildingLevelMap || prof.guildBuildingLevelMap || prof.guildBuildingLevelDict);
+    if (!map || typeof map !== 'object') continue;
+    const next = keys.reduce((o,k)=>(o[k]=0,o),{});
+    let any = false;
+    for (const [hrid, lv] of Object.entries(map)) {
+      const base = String(hrid).replace('/guild_buildings/', '').replace('guild_', '');
+      const key = hmap[base] || (next[base] !== undefined ? base : null);
+      if (!key || next[key] === undefined) continue;
+      const v = Math.max(0, Math.min(GUILD_BUILDING_MAX_LEVEL, Math.floor(Number(lv) || 0)));
+      next[key] = v;
+      if (v > 0) any = true;
+    }
+    if (any) { state.guildBuildings = next; state.guildBuildingsTs = Date.now(); return true; }
+  }
+  return false;
+}
+
 
 // === Data Persistence ===
 function getStorageKey() { return 'mwi_trial_'+(state.guild||'default'); }
+// 共享/持久化的统一载荷：成员（含个人神龛）+ 试炼槽 + 公会建筑（公会全局）等
+function sharedPayload() {
+  return {
+    guild: state.guild,
+    members: state.members,
+    trials: state.trials,
+    deletedIds: state.deletedIds,
+    guildBuildings: state.guildBuildings || {},
+    guildBuildingsTs: state.guildBuildingsTs || 0
+  };
+}
 function saveData() {
-  const data = JSON.stringify({ guild:state.guild, members:state.members, trials:state.trials, deletedIds:state.deletedIds });
+  const data = JSON.stringify(sharedPayload());
   try { localStorage.setItem(getStorageKey(), data); } catch(e) {}
   if (state.isShared && state.binId && state.encKey) saveToBin(data);
 }
 function loadData() {
   try {
     const raw = localStorage.getItem(getStorageKey());
-    if (raw) { Object.assign(state, JSON.parse(raw)); if (!Array.isArray(state.deletedIds)) state.deletedIds = []; return true; }
+    if (raw) {
+      Object.assign(state, JSON.parse(raw));
+      if (!Array.isArray(state.deletedIds)) state.deletedIds = [];
+      if (!state.guildBuildings) state.guildBuildings = guildBuildingAllKeys().reduce((o,k)=>(o[k]=0,o),{});
+      if (!state.guildBuildingsTs) state.guildBuildingsTs = 0;
+      return true;
+    }
   } catch(e) {}
   return false;
 }
@@ -1476,6 +1675,8 @@ function saveToBin(data) {
       state.members = merged.members;
       state.trials = merged.trials;
       state.deletedIds = merged.deletedIds || [];
+      if (merged.guildBuildings) state.guildBuildings = merged.guildBuildings;
+      state.guildBuildingsTs = merged.guildBuildingsTs || state.guildBuildingsTs || 0;
     } catch(e) { console.error('Save failed:', e); }
     isSaving = false;
   }, 2000);
@@ -1493,6 +1694,8 @@ async function forcePushToBin(data) {
     state.members = parsed.members;
     state.trials = parsed.trials;
     state.deletedIds = parsed.deletedIds || [];
+    if (parsed.guildBuildings) state.guildBuildings = parsed.guildBuildings;
+    state.guildBuildingsTs = parsed.guildBuildingsTs || state.guildBuildingsTs || 0;
   } catch(e) { console.error('Force push failed:', e); }
 }
 
@@ -1519,7 +1722,12 @@ function mergeState(local, remote) {
     if (r && r._ts && (!trial._ts || r._ts > trial._ts)) return r;
     return trial;
   });
-  return { guild: local.guild || remote.guild, members: mergedMembers, trials: mergedTrials, deletedIds: [...del] };
+  // 公会建筑是「公会全局」，按时间戳取新（谁最后改的以谁为准）
+  const lTs = local.guildBuildingsTs || 0, rTs = remote.guildBuildingsTs || 0;
+  const mergedGB = (rTs > lTs && remote.guildBuildings) ? remote.guildBuildings : (local.guildBuildings || remote.guildBuildings || {});
+  const mergedGBTs = Math.max(lTs, rTs);
+  return { guild: local.guild || remote.guild, members: mergedMembers, trials: mergedTrials, deletedIds: [...del],
+           guildBuildings: mergedGB, guildBuildingsTs: mergedGBTs };
 }
 async function loadFromBin() {
   try {
@@ -1536,6 +1744,8 @@ async function loadFromBin() {
       const data = JSON.parse(dec);
       Object.assign(state, data);
       if (!Array.isArray(state.deletedIds)) state.deletedIds = [];
+      if (!state.guildBuildings) state.guildBuildings = {};
+      if (!state.guildBuildingsTs) state.guildBuildingsTs = 0;
       return true;
     }
   } catch(e) { console.error('Load failed:', e); }
@@ -1543,7 +1753,7 @@ async function loadFromBin() {
 }
 async function createBin(guild, password, masterKey) {
   const encKey = await deriveKey(password, guild);
-  const data = JSON.stringify({ guild, members: state.members, trials: state.trials, deletedIds: state.deletedIds });
+  const data = JSON.stringify(Object.assign(sharedPayload(), { guild }));
   const rec = await encryptRecord(data, encKey);
   const resp = await fetch(BIN_BASE, {
     method:'POST',
@@ -1709,11 +1919,13 @@ async function init() {
     let loadedFromShare = await loadFromBin();
     updateConnectionStatus();
     if (!state.trials) state.trials = [{skill:0,max:20},{skill:1,max:20},{skill:2,max:20},{skill:3,max:20}];
+    applyTrialCaps();
     renderAll();
     if (loadedFromShare && state.members.length > 0) calculate();
   } else {
     loadData();
     if (!state.trials) state.trials = [{skill:0,max:20},{skill:1,max:20},{skill:2,max:20},{skill:3,max:20}];
+    applyTrialCaps();
     renderAll();
   }
 }
@@ -1775,10 +1987,8 @@ __SVG_SYMBOLS__
       <span class="global-buff-unit" id="gb-unit-enhancingSpeed">级</span>
     </label>
   </div>
-  <h3 id="h3-guild-buildings">公会建筑 <span class="global-buff-hint" id="guild-buildings-hint" title=""></span></h3>
+  <h3 id="h3-guild-buildings">公会建筑 <span class="global-buff-hint" id="guild-buildings-hint" title=""></span> <span class="global-buff-subhint" id="guild-buildings-shared"></span></h3>
   <div class="global-buff-bar" id="guild-buildings-bar"></div>
-  <h3 id="h3-guild-shrines">公会神龛 <span class="global-buff-hint" id="guild-shrines-hint" title=""></span></h3>
-  <div class="global-buff-bar" id="guild-shrines-bar"></div>
 </div>
 
 <div class="trial-section">
@@ -1890,8 +2100,34 @@ def main():
     else:
         print('WARNING: buffs_sprite.svg not found, global buff icons will be missing')
 
-    # Combine: skill icons, equipment icons, then buff icons
-    all_symbols = skill_symbols + equip_symbols + buff_symbols
+    # Read guild_sprite.svg for guild building / shrine icons
+    guild_sprite_path = os.path.join(BASE_DIR, 'guild_sprite.svg')
+    guild_symbols = []
+    _gb = GAME_DATA.get('guildBuilding', {}) or {}
+    _gs = GAME_DATA.get('guildShrine', {}) or {}
+    # 全部 23 建筑（6 功能 + 17 试炼）+ 5 神龛的图标（顺序：功能建筑 → 试炼建筑 → 神龛）
+    _guild_ids = ([u.get('icon') for u in _gb.get('utility', [])]
+                  + [td.get('icon') for td in _gb.get('trial', [])]
+                  + [d.get('icon') for d in _gs.get('defs', [])])
+    if not _guild_ids:
+        _guild_ids = list((_gb.get('icons', {}) or {}).values()) + list((_gs.get('icons', {}) or {}).values())
+    _guild_ids = [x for x in _guild_ids if x]
+    guild_icon_ids = set(_guild_ids)
+    if os.path.exists(guild_sprite_path):
+        with open(guild_sprite_path, 'r', encoding='utf-8') as f:
+            guild_content = f.read()
+        for gid in _guild_ids:
+            sym = extract_symbol(guild_content, gid)
+            if sym:
+                guild_symbols.append(sym)
+            else:
+                print(f'  WARNING: guild symbol not found: {gid}')
+        print(f'Guild icons: {len(guild_symbols)} (buildings+shrines)')
+    else:
+        print('WARNING: guild_sprite.svg not found, guild building/shrine icons will be missing')
+
+    # Combine: skill icons, equipment icons, buff icons, guild icons
+    all_symbols = skill_symbols + equip_symbols + buff_symbols + guild_symbols
     svg_block = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="display:none">\n' + '\n'.join(all_symbols) + '\n</svg>'
 
     # Build EQUIP_ICONS JS
@@ -1916,13 +2152,39 @@ def main():
         game_data_lines.append('const HOUSE_ROOM_SKILL_MAP = %s;' % json.dumps(gd.get('houseRoomSkillMap', {}), ensure_ascii=False))
         game_data_lines.append('const HOUSE_BONUS_PER_LEVEL = %s;' % json.dumps(gd.get('houseBonusPerLevel', {})))
         gbd = gd.get('guildBuilding', {})
-        game_data_lines.append('const GUILD_BUILDING_KEYS = %s;' % json.dumps(gbd.get('keys', []), ensure_ascii=False))
+        _util = gbd.get('utility', [])
+        _trial = gbd.get('trial', [])
+        _util_keys = [u.get('key') for u in _util]
+        _trial_keys = [td.get('skill') for td in _trial]
+        _icons = {}
+        for _u in _util: _icons[_u.get('key')] = _u.get('icon')
+        for _td in _trial: _icons[_td.get('skill')] = _td.get('icon')
+        game_data_lines.append('const GUILD_BUILDING_KEYS = %s;' % json.dumps(gbd.get('keys', _trial_keys), ensure_ascii=False))
         game_data_lines.append('const GUILD_BUILDING_LIFE_KEYS = %s;' % json.dumps(gbd.get('lifeKeys', []), ensure_ascii=False))
         game_data_lines.append('const GUILD_BUILDING_COMBAT_KEYS = %s;' % json.dumps(gbd.get('combatKeys', []), ensure_ascii=False))
-        game_data_lines.append('const GUILD_BUILDING_MAX_LEVEL = %s;' % json.dumps(gbd.get('maxLevel', 50)))
+        game_data_lines.append('const GUILD_BUILDING_MAX_LEVEL = %s;' % json.dumps(gbd.get('maxLevel', 20)))
+        game_data_lines.append('const GUILD_BUILDING_SKILL_PER_LEVEL = %s;' % json.dumps(gbd.get('skillLevelPerLevel', 2)))
+        # 试炼人数上限（游戏客户端 partyCapForKind）：cap = 基准 + min(营地等级, 上限) × 每级人数
+        game_data_lines.append('const GUILD_BUILDING_SKILLING_SLOTS_PER_LEVEL = %s;' % json.dumps(gbd.get('skillingTrialSlotsPerLevel', 2)))
+        game_data_lines.append('const GUILD_BUILDING_COMBAT_SLOTS_PER_LEVEL = %s;' % json.dumps(gbd.get('combatTrialSlotsPerLevel', 2)))
+        game_data_lines.append('const GUILD_BUILDING_SKILLING_BASE_CAP = %s;' % json.dumps(gbd.get('skillingTrialBaseCap', 20)))
+        game_data_lines.append('const GUILD_BUILDING_COMBAT_BASE_CAP = %s;' % json.dumps(gbd.get('combatTrialBaseCap', 40)))
+        game_data_lines.append('const GUILD_BUILDING_UTILITY = %s;' % json.dumps(_util, ensure_ascii=False))
+        game_data_lines.append('const GUILD_BUILDING_TRIAL = %s;' % json.dumps(_trial, ensure_ascii=False))
+        game_data_lines.append('const GUILD_BUILDING_UTILITY_KEYS = %s;' % json.dumps(gbd.get('utilityKeys', _util_keys), ensure_ascii=False))
+        game_data_lines.append('const GUILD_BUILDING_ALL_KEYS = %s;' % json.dumps(_util_keys + _trial_keys, ensure_ascii=False))
+        game_data_lines.append('const GUILD_BUILDING_ICONS = %s;' % json.dumps(_icons, ensure_ascii=False))
+        # 游戏 guildBuildingLevelMap 用建筑 hrid 做键，这里映射成我们内部的 key
+        game_data_lines.append('const GUILD_BUILDING_HRID_TO_KEY = %s;' % json.dumps(gbd.get('hridToKey', {}), ensure_ascii=False))
         gsd = gd.get('guildShrine', {})
         game_data_lines.append('const GUILD_SHRINE_KEYS = %s;' % json.dumps(gsd.get('keys', []), ensure_ascii=False))
-        game_data_lines.append('const GUILD_SHRINE_MAX_LEVEL = %s;' % json.dumps(gsd.get('maxLevel', 50)))
+        game_data_lines.append('const GUILD_SHRINE_MAX_LEVEL = %s;' % json.dumps(gsd.get('maxLevel', 20)))
+        game_data_lines.append('const GUILD_SHRINE_ICONS = %s;' % json.dumps(gsd.get('icons', {}), ensure_ascii=False))
+        game_data_lines.append('const GUILD_SHRINE_SKILL_BUFFS = %s;' % json.dumps(gsd.get('skillingBuffs', {}), ensure_ascii=False))
+        game_data_lines.append('const GUILD_SHRINE_DEFS = %s;' % json.dumps(gsd.get('defs', []), ensure_ascii=False))
+        # 个人神龛增益键：/guild_buffs/<shrine>_skilling（成员数据里的 guildBuffLevelMap 用的就是这个键）
+        game_data_lines.append('const GUILD_SHRINE_BUFF_HRIDS = %s;' % json.dumps(
+            {s.get('key'): s.get('buffHrid') for s in gsd.get('defs', [])}, ensure_ascii=False))
         game_data_lines.append('const EMBEDDED_CLIENT_DATA = %s;' % json.dumps(gd.get('embeddedClientData', {}), ensure_ascii=False))
     game_data_js = '\n'.join(game_data_lines)
 

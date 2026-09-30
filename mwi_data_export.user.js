@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         MWI Data Export / 银河奶牛数据导出
 // @namespace    https://www.milkywayidle.com/
-// @version      0.6.0
-// @description  Export your MWI guild members' full profile data (skills + equipment) to a JSON file for the MWI Trial Calculator.
-// @description:zh-CN 导出银河奶牛公会成员的完整数据（技能+装备）为 JSON 文件，供试炼计算器导入。进入公会成员页后会自动采集全部成员数据。
+// @version      0.7.0
+// @description  Export your MWI guild members' full profile data (skills + equipment + personal shrine buffs + guild building levels) to a JSON file for the MWI Trial Calculator.
+// @description:zh-CN 导出银河奶牛公会成员的完整数据（技能+装备+个人神龛增益+公会建筑等级）为 JSON 文件，供试炼计算器导入。进入公会成员页后会自动采集全部成员数据。
 // @author       Guild Tools (modified)
 // @license      MIT
 // @match        https://www.milkywayidle.com/*
@@ -17,7 +17,7 @@
 (function () {
     'use strict';
 
-    const SCRIPT_VERSION = '0.6.0';
+    const SCRIPT_VERSION = '0.7.0';
     const EQUIPPED_LOCATION_PREFIX = '/item_locations/';
     const INVENTORY_LOCATION = '/item_locations/inventory';
 
@@ -41,6 +41,10 @@
         statusButton: null,
         seenEvents: new WeakSet(),
         mwiSocket: null,
+        // 个人神龛增益等级（键 /guild_buffs/<shrine>_skilling，来自 guild_buffs_updated 的 characterGuildBuffMap）
+        guildBuffLevelMap: null,
+        // 公会建筑等级（键 /guild_buildings/<building>，公会全局，来自 guild_updated 的 guildBuildingLevelMap）
+        guildBuildingLevelMap: null,
         chatPayloadTemplate: (() => {
             try { return localStorage.getItem('mwi-export:chat-payload-template'); } catch (_) { return null; }
         })(),
@@ -167,6 +171,9 @@
                 name: String(obj.character.name || ''),
                 gameMode: String(obj.character.gameMode || ''),
             };
+            // 若服务端在角色对象里带了个人神龛增益，一并记下
+            const initBuffMap = obj.character.guildBuffLevelMap || obj.character.characterGuildBuffMap;
+            if (initBuffMap && typeof initBuffMap === 'object') state.guildBuffLevelMap = { ...initBuffMap };
             mergeSkills(obj.characterSkills, true);
             mergeItems(obj.characterItems, true);
             mergeAbilities(obj.characterAbilities, true);
@@ -185,6 +192,24 @@
             if (obj.endCharacterItems) mergeItems(obj.endCharacterItems);
             if (obj.endCharacterAbilities) mergeAbilities(obj.endCharacterAbilities);
             changed = Boolean(obj.endCharacterSkills || obj.endCharacterItems || obj.endCharacterAbilities);
+        }
+
+        // 个人神龛增益等级（自己）：guild_buffs_updated 带 characterGuildBuffMap
+        // 键形如 /guild_buffs/force_skilling，与共享资料里的 guildBuffLevelMap 完全一致
+        if (obj.type === 'guild_buffs_updated' || obj.type === 'guild_buff_levels_updated') {
+            const m = obj.characterGuildBuffMap || obj.guildBuffLevelMap || obj.characterGuildBuffLevelMap;
+            if (m && typeof m === 'object') {
+                state.guildBuffLevelMap = { ...m };
+                changed = true;
+            }
+        }
+        // 公会建筑等级（公会全局）：guild_updated 带 guildBuildingLevelMap
+        if (obj.type === 'guild_updated' || obj.type === 'guild_buildings_updated') {
+            const m = obj.guildBuildingLevelMap || obj.guildBuildingLevelDict;
+            if (m && typeof m === 'object') {
+                state.guildBuildingLevelMap = { ...m };
+                changed = true;
+            }
         }
 
         if (obj.type === 'profile_shared') {
@@ -434,9 +459,28 @@
 
         const members = [];
 
-        // 自己角色：从 buildPayload 构建 profile 格式
+        // 公会建筑等级（公会全局，来自 guild_updated）—— 只挂在第一位成员上，避免重复
+        const gwBuildings = state.guildBuildingLevelMap && Object.keys(state.guildBuildingLevelMap).length
+            ? { ...state.guildBuildingLevelMap } : null;
+        // 自己角色的个人神龛增益（来自 guild_buffs_updated），用于补齐原始 profile 缺失时的情况
+        const myBuffLevels = state.guildBuffLevelMap && Object.keys(state.guildBuffLevelMap).length
+            ? { ...state.guildBuffLevelMap } : null;
+
+        // 自己角色：若缓存里有自己完整的原始 profile（含 guildBuffLevelMap 个人神龛增益等字段）就优先用，
+        // 否则退回用 buildPayload 重建的精简 profile（旧行为）。
+        let selfCached = null;
         if (payload) {
-            members.push({
+            const c = state.cachedProfiles.get(payload.character.name);
+            if (c && c.profile) selfCached = c.profile;
+        }
+        if (selfCached) {
+            const copy = { ...selfCached };
+            // 原始 profile 若缺个人神龛增益（可能该玩家没买），用实时抓到的补上
+            if (!copy.guildBuffLevelMap && myBuffLevels) copy.guildBuffLevelMap = myBuffLevels;
+            if (!copy.sharableCharacter) copy.sharableCharacter = { name: payload ? payload.character.name : '' };
+            members.push(copy);
+        } else if (payload) {
+            const rebuilt = {
                 sharableCharacter: {
                     name: payload.character.name,
                     gameMode: payload.character.gameMode,
@@ -454,7 +498,9 @@
                 }, {}),
                 _source: 'self',
                 _capturedAt: payload.capturedAt,
-            });
+            };
+            if (myBuffLevels) rebuilt.guildBuffLevelMap = myBuffLevels;
+            members.push(rebuilt);
         }
 
         // 公会成员：直接使用保存的完整 profile 对象
@@ -464,6 +510,9 @@
                 members.push(cached.profile);
             }
         }
+
+        // 公会建筑等级是公会全局数据，挂到第一位成员上供计算器导入时自动预填
+        if (members.length > 0 && gwBuildings) members[0]._guildBuildingLevelMap = gwBuildings;
 
         if (members.length === 0) {
             setStatus('无数据可导出', 'error');

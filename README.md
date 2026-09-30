@@ -13,9 +13,11 @@ mwi_devkit/
 ├── items.svg                     # 装备图标源（960 个 SVG symbol）
 ├── skills_sprite.svg             # 17 个纯技能图标（来自游戏 CDN）
 ├── buffs_sprite.svg              # 全局 BUFF 图标（gathering/efficiency/action_speed，来自游戏 CDN）
+├── guild_sprite.svg              # 公会建筑/神龛图标（23 建筑 + 5 神龛，来自游戏 misc_sprite）
 ├── equip.json                    # 权威槽位→中文装备名列表（生成 EQUIP_ICONS 用）
 ├── item_name_map.json            # 中文名→iconId 映射（生成图标用）
-└── mwi_data_export.user.js       # 油猴导出脚本（v0.6.0，源文件）
+├── mwi_data.json                 # 游戏数据（装备加成表/房屋/成就/公会建筑/神龛，构建期内联）
+└── mwi_data_export.user.js       # 油猴导出脚本（v0.7.0，源文件）
 ```
 说明：
 - `mwi_trial_calculator.html`（计算器成品）由 `generate_html.py` 生成，**不纳入本包**；用本包可随时重新生成，避免与源素材重复。
@@ -25,20 +27,32 @@ mwi_devkit/
 ## 三、两大组件
 
 ### 1. 计算器网页（由 generate_html.py 生成的单文件 HTML）
-- 单页布局：顶部 4 个试炼配置卡片（技能图标选择 + 人数上限 + 可滚动成员列表）→ 全局加成栏 → 下方成员大表格。
+- 单页布局：顶部 4 个试炼配置卡片（技能图标选择 + 人数上限显示 + 可滚动成员列表）→ 全局加成栏 → 公会建筑栏 → 下方成员大表格。
+- **试炼「人数上限」不可手改**：由**公会生活营地等级**派生（对齐游戏客户端 `partyCapForKind`）：`上限 = 20 + min(生活营地等级, 20) × 2`；战斗试炼同理 `40 + min(战斗营地, 20) × 2`（暂未模拟战斗试炼）。卡片上显示数值 + 一行「由生活营地决定」提示，hover 显示算式。
 - 双展示分配结果：成员表「分配」列显示试炼图标 + 试炼卡片下方滚动成员列表，两处同步。
 - 个人装备系统：每成员 22 个装备槽（12 防具 + 10 技能工具，已移除饰品/护符，双手并入主手）。图标为 Enhancelator 风格网格选择器，强化等级 +0~+20。装备加成影响算法（工具加成特定技能，防具加成全部技能）。
 - **全局 BUFF**：顶部「全局加成」栏三项输入——采集数量（gathering）/生产效率（efficiency）/强化速度（action_speed），0=无、1~20 级，加成% = 19.5 + 等级×0.5（Enhancelator 风格公式）。采集类→双倍产出概率、生产类→效率、强化→动作速度。仅本地保存（localStorage `mwi_global_buffs`），不上传共享。
-- 图标：内联 447 个 SVG（17 技能 + 427 装备 + 3 全局 BUFF），来自 `skills_sprite.svg`、`items.svg`、`buffs_sprite.svg`；装备图标经 `equip.json` + `item_name_map.json` 映射生成，无后缀猜测。
+- **公会建筑**（**公会全局，随共享数据上传**）：对齐游戏 23 座（上限 20 级），按 **功能建筑 / 生活类建筑 / 战斗类建筑** 三块显示（带分组标题与分隔线）。key/中英名/图标/hrid 见 `mwi_data.json` 的 `guildBuilding`。
+  - 6 座**功能建筑**（公会大厅/建造者殿堂/金库/档案馆/生活营地/战斗营地）：成员上限、公会点数、代币、经验、生活试炼参加人数 +2/级、战斗试炼参加人数 +2/级；**不影响试炼层数**，界面中以弱化样式标出（hover 有说明）。
+  - 10 座**生活类建筑**（公会奶牛棚…公会天文台，对应 10 个生活技能）：仅在本公会试炼期间为成员提供加成，每级 **+2 有效等级**（近似值，游戏内实际效果由服务端下发）。
+  - 7 座**战斗类建筑**（公会餐厅…公会神秘研究室，对应 7 个战斗属性）：同上，暂未参与战斗试炼模拟。
+  - 建筑等级存在 `state.guildBuildings` + `state.guildBuildingsTs`，进入共享 payload（bin/localStorage）；合并时按时间戳取新（谁最后改以谁为准）。旧版 localStorage `mwi_guild_buildings` 会自动迁移一次。
+- **个人神龛（力量/节奏/精神/稀有/学者）—— 没有全局输入框**：5 项神龛等级属于**个人属性**，作为成员表里的 5 个可编辑列（与技能等级/装备一样的编辑与上传方式），随共享 payload 逐人同步。上限 20 级。
+  - 官方数值取自游戏 `guildBuffDetailMap`：force=效率 +0.5%/级、tempo=动作速度 +0.5%/级、spirit=精华掉率 +2%/级、rarity=稀有掉率 +1%/级、scholar=智慧 +0.5%/级。
+  - **仅 force/tempo 影响试炼推演指标**（效率/动作速度），其余三项列头与单元格置灰并注明「不影响试炼层数」。
+  - 导入成员数据时自动从 `guildBuffLevelMap`（键 `/guild_buffs/<shrine>_skilling`）解析填充；成员名下方保留 `神龛 力N 节M` 小徽标（仅显示非 0 的影响项）。
+- 图标：内联 475 个 SVG（17 技能 + 427 装备 + 3 全局 BUFF + 23 公会建筑 + 5 神龛），来自 `skills_sprite.svg`、`items.svg`、`buffs_sprite.svg`、`guild_sprite.svg`；装备图标经 `equip.json` + `item_name_map.json` 映射生成，无后缀猜测。
 - i18n：中/英（`t(key)`，localStorage 持久化）。
 - 主题：浅色/深色 CSS 变量切换。
 - 算法常量：试炼 3600 秒、起始 100 级、每通关 +10 级；基础行动 10 秒、成功率 80%；每级基础 40000 点、每通关 +4000；人数膨胀系数 0.01。
 - 核心算法 4 步：每人每技能指标 → 通关层数模拟（computePasses）→ 最小费用流分配（MCMF+SPFA）→ 局部搜索优化（localSearch，交换爬山）。
 
-### 2. 数据导出油猴脚本 `mwi_data_export.user.js` v0.6.0
-- 进游戏后 Hook WebSocket 抓取 `init_character_data` / `profile_shared`，缓存成员完整 profile。
+### 2. 数据导出油猴脚本 `mwi_data_export.user.js` v0.7.0
+- 进游戏后 Hook WebSocket 抓取 `init_character_data` / `profile_shared` / `guild_buffs_updated` / `guild_updated`，缓存成员完整 profile。
+- **个人神龛增益**：`guild_buffs_updated` 的 `characterGuildBuffMap`（键 `/guild_buffs/<shrine>_skilling`）即 `guildBuffLevelMap`，写入自己那份数据（原始 profile 已带则不覆盖）。
+- **公会建筑等级**：`guild_updated` 的 `guildBuildingLevelMap`（键 `/guild_buildings/<building>`，公会全局），以 `_guildBuildingLevelMap` 挂在**第一位成员**上；计算器导入时自动预填建筑栏。
 - 检测到公会成员页后自动遍历成员（view_profile 经 WebSocket 直发，绕开 UI 可信校验），逐个缓存后「导出完整原始数据到 JSON」。
-- 输出 JSON 数组：自己角色由 buildPayload 构建，公会成员直接用 profile 原对象。文件名 `MWI_公会_N人_日期.json`。
+- 输出 JSON 数组：自己角色优先用缓存到的完整原始 profile（含 `guildBuffLevelMap`），否则退回 buildPayload 重建的精简对象；公会成员直接用 profile 原对象。文件名 `MWI_公会_N人_日期.json`。
 - 提供「自动采集」菜单命令与「重新采集」按钮。
 
 ## 四、数据流（端到端）
@@ -57,14 +71,17 @@ mwi_devkit/
 - 无 URL 参数时走 localStorage 离线模式。
 
 ## 六、构建与二次开发
-- 生成计算器：在包根目录运行 `python generate_html.py`，读取 `items.svg`、`skills_sprite.svg`、`buffs_sprite.svg`、`equip.json`、`item_name_map.json`，输出 `mwi_trial_calculator.html`（单文件，可直接浏览器打开）。
-- 导出脚本：直接在 `mwi_data_export.user.js` 修改即可（v0.6.0，已精简到约 976 行）。按油猴脚本规范发布，`@match` 已在文件头定义。
+- 生成计算器：在包根目录运行 `python generate_html.py`，读取 `items.svg`、`skills_sprite.svg`、`buffs_sprite.svg`、`guild_sprite.svg`、`equip.json`、`item_name_map.json`、`mwi_data.json`，输出 `mwi_trial_calculator.html`（单文件，可直接浏览器打开）。
+- 导出脚本：直接在 `mwi_data_export.user.js` 修改即可（v0.7.0，已精简到约 1000 行）。按油猴脚本规范发布，`@match` 已在文件头定义。
 - 如需重新生成 `item_name_map.json`（中文名→iconId），原始数据来自游戏本地化 chunk，解析脚本为 `parse_zh_items.py`（未纳入本包，仅说明来源）。
 
 ## 七、现状要点与边界
-- 当前版本：计算器 2026-07-31 版（v5.4 + 全局 BUFF + 共享修复），导出脚本 v0.6.0。
+- 当前版本：计算器 2026-09-30 版（v6.0：神龛个人化 + 人数上限由营地派生 + 建筑三分类随共享上传），导出脚本 v0.7.0。
 - 导入仅接受 JSON 数组（已移除 CSV、单对象、JSONL），导入即整体替换共享 bin。
 - 装备仅 22 槽、无饰品/护符、双手并入主手；装备图标 427 个全部成功映射。
-- 全局 BUFF 仅本地生效，不参与共享同步。
+- 全局 BUFF 仅本地生效，不参与共享同步；**公会建筑 + 个人神龛均进入共享 payload**（建筑按时间戳合并，神龛逐人合并）。
+- 公会建筑已对齐游戏 23 座（上限 20，分功能/生活/战斗三类）；神龛 5 座（上限 20，个人属性），图标均为游戏原生图标。
+- 只有 力量(效率)/节奏(动作速度) 影响试炼层数，且完全按成员「个人」读取（`member.shrines` ← `guildBuffLevelMap`），**已移除全局神龛输入与兜底**。
+- 试炼人数上限不再是可输入项：`20 + min(生活营地, 20)×2`（战斗为 40 基准，暂未模拟）。
 - 不兼容旧（未压缩）jsonbin 数据（v5.4b 已移除旧格式兼容）。
 - 测试基线：80 人满装备约 33ms，总等级 810 / 通关 41 次。
