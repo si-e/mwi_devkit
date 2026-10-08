@@ -11,11 +11,124 @@
       "accessoryEnhSlots": "这些槽位的强化加成系数 ×5。",
       "toolPrefixBonus": "生活工具前缀(品质)对应基础数值；后缀(工具类型)决定作用技能见 toolSuffixSkill。未命中 EQUIPMENT_BASE_BONUSES 时按 前缀数值×后缀技能 计算。",
       "enhancerPrefixBonus": "强化工具(enhancer)前缀数值（影响 enhancingSuccess）。",
-      "houseBonusPerLevel": "房屋房间每级提供的效率加成(小数)，其余为 0。",
-      "guildBuilding": "本地输入项（不上传）。17 座试炼建筑（对应房屋房间），maxLevel=20，每级 +skillLevelPerLevel 有效等级（近似）。icons 映射到 guild_sprite.svg 的 symbol id。",
-      "guildShrine": "本地输入项（不上传）。5 座神龛（对齐游戏：力量/节奏/精神/稀有/学者），maxLevel=20。skillingBuffs 为每级生活增益（来自游戏 guildBuffDetailMap）：force=效率+0.5%/级、tempo=动作速度+0.5%/级、spirit=精华掉率+2%/级、rarity=稀有掉率+1%/级、scholar=智慧+0.5%/级。仅 force/tempo 影响试炼推演指标。"
+      "lifeEquipment": "「生活装备」= 命中 equipmentBaseBonuses 的装备（只有生活技能加成、没有战斗加成），其余为「战斗装备」。生活装备里只有 上衣(身体)/下装(腿部)/披风(背部) 存在同一槽位多件互不替代的情况（10 套技能套装 + 4 类披风），因此按「拥有制」记录（member.ownedEquip[slot][iconId]=强化等级），推演时按试炼技能自动择优；其余槽位（10 生活工具 + 12 战斗配装槽）保留「一槽一件」。注意 eye_watch = 掌上监工（副手，唯一一件生活装备），不要误当成「视觉头盔」(vision_helmet)。",
+      "houseBonusPerLevel": "（legacy 兜底）房屋房间每级效率加成(小数)；新逻辑以 houseRoom.defs 为准。",
+      "guildBuilding": "公会全局输入项（随共享数据上传，附 guildBuildingsTs 时间戳合并）。23 座（6 功能 + 17 试炼），maxLevel=20，试炼建筑每级 +skillLevelPerLevel 有效等级（近似）。icons 映射到 guild_sprite.svg 的 symbol id；hridToKey 用于把游戏 guildBuildingLevelMap 的 /guild_buildings/<hrid> 键映射成本地 key。",
+      "guildShrine": "成员级个人输入项（逐成员可编辑，随共享数据上传）。5 座神龛（力量/节奏/精神/稀有/学者），maxLevel=20；每座拆成「生活」与「战斗」两个变体（defs[].variants，slot = <key>_skilling / <key>_combat），数值取自游戏 guildBuffDetailMap：force 生活=效率+0.5%/级、战斗=伤害+0.3%/级；tempo 生活=动作速度+0.5%/级、战斗=攻击/施法速度+0.4%/级；spirit 生活=精华掉率+2%/级、战斗=生命/法力上限+1%/级；rarity 生活/战斗=稀有掉率+1%/级；scholar 生活/战斗=智慧+0.5%/级。仅 force/tempo 的生活变体影响生活试炼推演（affectsTrial），战斗变体为后续战斗试炼预留。",
+      "achievementTiers": "成就档位（成员级个人数据，逐成员可编辑，随共享数据上传）。完整 6 档（初学者/新手/熟练者/老手/精英/冠军），数值取自游戏 achievementTierDetailMap：初学者=采集数量+2%、新手=经验+2%、熟练者=效率+2%、老手=稀有发现+2%、精英=伤害+2%（战斗）、冠军=强化成功率+0.2%。total = 该档成就总数（全部完成才解锁）。affectsTrial 标记是否影响生活试炼推演；affectsCombat 标记是否影响战斗（为后续战斗试炼预留）。",
+      "houseRoom": "17 个房屋房间（成员级个人持久化数据，逐成员可编辑，随共享数据上传）。maxLevel=20。defs[].actionBuffs 取自游戏 houseRoomDetailMap（生活房间多为 效率+1.5%/级；天文台=动作速度+1%/级 + 强化成功率+0.05%/级）；10 个生活房间（skillingKeys）影响生活试炼推演，7 个战斗房间（combatKeys）为战斗试炼预留。图标取自 misc_sprite 的 house_<key>（house_sprite.svg）。所有房间另有全局 +0.5%/级 经验、+0.2%/级 稀有掉率（不影响推演指标）。"
     }
   },
+  "achievementTiers": [
+    {
+      "key": "beginner",
+      "hrid": "/achievement_tiers/beginner",
+      "zh": "初学者",
+      "en": "Beginner",
+      "effectZh": "采集数量 +2%",
+      "effectEn": "Gathering +2%",
+      "buffs": [
+        {
+          "type": "gathering",
+          "mode": "flat",
+          "perLevel": 0.02
+        }
+      ],
+      "affectsTrial": true,
+      "affectsCombat": false,
+      "total": 6
+    },
+    {
+      "key": "novice",
+      "hrid": "/achievement_tiers/novice",
+      "zh": "新手",
+      "en": "Novice",
+      "effectZh": "经验 +2%",
+      "effectEn": "XP +2%",
+      "buffs": [
+        {
+          "type": "wisdom",
+          "mode": "flat",
+          "perLevel": 0.02
+        }
+      ],
+      "affectsTrial": false,
+      "affectsCombat": false,
+      "total": 11
+    },
+    {
+      "key": "adept",
+      "hrid": "/achievement_tiers/adept",
+      "zh": "熟练者",
+      "en": "Adept",
+      "effectZh": "效率 +2%",
+      "effectEn": "Efficiency +2%",
+      "buffs": [
+        {
+          "type": "efficiency",
+          "mode": "flat",
+          "perLevel": 0.02
+        }
+      ],
+      "affectsTrial": true,
+      "affectsCombat": false,
+      "total": 14
+    },
+    {
+      "key": "veteran",
+      "hrid": "/achievement_tiers/veteran",
+      "zh": "老手",
+      "en": "Veteran",
+      "effectZh": "稀有发现 +2%",
+      "effectEn": "Rare Find +2%",
+      "buffs": [
+        {
+          "type": "rare_find",
+          "mode": "flat",
+          "perLevel": 0.02
+        }
+      ],
+      "affectsTrial": false,
+      "affectsCombat": false,
+      "total": 14
+    },
+    {
+      "key": "elite",
+      "hrid": "/achievement_tiers/elite",
+      "zh": "精英",
+      "en": "Elite",
+      "effectZh": "伤害 +2%",
+      "effectEn": "Damage +2%",
+      "buffs": [
+        {
+          "type": "damage",
+          "mode": "ratio",
+          "perLevel": 0.02
+        }
+      ],
+      "affectsTrial": false,
+      "affectsCombat": true,
+      "total": 16
+    },
+    {
+      "key": "champion",
+      "hrid": "/achievement_tiers/champion",
+      "zh": "冠军",
+      "en": "Champion",
+      "effectZh": "强化成功率 +0.2%",
+      "effectEn": "Enhance Success +0.2%",
+      "buffs": [
+        {
+          "type": "enhancing_success",
+          "mode": "ratio",
+          "perLevel": 0.002
+        }
+      ],
+      "affectsTrial": true,
+      "affectsCombat": false,
+      "total": 16
+    }
+  ],
   "equipmentBaseBonuses": {
     "/items/eye_watch": {
       "base": {
@@ -615,8 +728,50 @@
         "affectsTrial": true,
         "effectZh": "效率 +0.5%/级",
         "effectEn": "Efficiency +0.5%/lv",
-        "combatZh": "伤害 +0.3%/级",
-        "combatEn": "Damage +0.3%/lv"
+        "variants": [
+          {
+            "kind": "skilling",
+            "slot": "force_skilling",
+            "zh": "力量神龛（生活）",
+            "en": "Force Shrine (Skilling)",
+            "buffHrid": "/guild_buffs/force_skilling",
+            "affectsTrial": true,
+            "affectsCombat": false,
+            "buffs": [
+              {
+                "type": "efficiency",
+                "mode": "flat",
+                "perLevel": 0.005
+              }
+            ],
+            "effectZh": "效率 +0.5%/级",
+            "effectEn": "Efficiency +0.5%/lv",
+            "icon": "guild_shrine_force",
+            "shrine": "force"
+          },
+          {
+            "kind": "combat",
+            "slot": "force_combat",
+            "zh": "力量神龛（战斗）",
+            "en": "Force Shrine (Combat)",
+            "buffHrid": "/guild_buffs/force_combat",
+            "affectsTrial": false,
+            "affectsCombat": true,
+            "buffs": [
+              {
+                "type": "damage",
+                "mode": "ratio",
+                "perLevel": 0.003
+              }
+            ],
+            "effectZh": "伤害 +0.3%/级",
+            "effectEn": "Damage +0.3%/lv",
+            "icon": "guild_shrine_force",
+            "shrine": "force"
+          }
+        ],
+        "combatHrid": "/guild_buffs/force_combat",
+        "affectsCombat": true
       },
       {
         "key": "tempo",
@@ -629,8 +784,55 @@
         "affectsTrial": true,
         "effectZh": "动作速度 +0.5%/级",
         "effectEn": "Action Speed +0.5%/lv",
-        "combatZh": "攻击/施法速度 +0.4%/级",
-        "combatEn": "Attack/Cast Speed +0.4%/lv"
+        "variants": [
+          {
+            "kind": "skilling",
+            "slot": "tempo_skilling",
+            "zh": "节奏神龛（生活）",
+            "en": "Tempo Shrine (Skilling)",
+            "buffHrid": "/guild_buffs/tempo_skilling",
+            "affectsTrial": true,
+            "affectsCombat": false,
+            "buffs": [
+              {
+                "type": "action_speed",
+                "mode": "flat",
+                "perLevel": 0.005
+              }
+            ],
+            "effectZh": "动作速度 +0.5%/级",
+            "effectEn": "Action Speed +0.5%/lv",
+            "icon": "guild_shrine_tempo",
+            "shrine": "tempo"
+          },
+          {
+            "kind": "combat",
+            "slot": "tempo_combat",
+            "zh": "节奏神龛（战斗）",
+            "en": "Tempo Shrine (Combat)",
+            "buffHrid": "/guild_buffs/tempo_combat",
+            "affectsTrial": false,
+            "affectsCombat": true,
+            "buffs": [
+              {
+                "type": "attack_speed",
+                "mode": "ratio",
+                "perLevel": 0.004
+              },
+              {
+                "type": "cast_speed",
+                "mode": "flat",
+                "perLevel": 0.004
+              }
+            ],
+            "effectZh": "攻击/施法速度 +0.4%/级",
+            "effectEn": "Attack/Cast Speed +0.4%/lv",
+            "icon": "guild_shrine_tempo",
+            "shrine": "tempo"
+          }
+        ],
+        "combatHrid": "/guild_buffs/tempo_combat",
+        "affectsCombat": true
       },
       {
         "key": "spirit",
@@ -643,8 +845,55 @@
         "affectsTrial": false,
         "effectZh": "精华掉率 +2%/级",
         "effectEn": "Essence Find +2%/lv",
-        "combatZh": "生命/法力 +1%/级",
-        "combatEn": "Max HP/MP +1%/lv"
+        "variants": [
+          {
+            "kind": "skilling",
+            "slot": "spirit_skilling",
+            "zh": "精神神龛（生活）",
+            "en": "Spirit Shrine (Skilling)",
+            "buffHrid": "/guild_buffs/spirit_skilling",
+            "affectsTrial": false,
+            "affectsCombat": false,
+            "buffs": [
+              {
+                "type": "essence_find",
+                "mode": "flat",
+                "perLevel": 0.02
+              }
+            ],
+            "effectZh": "精华掉率 +2%/级",
+            "effectEn": "Essence Find +2%/lv",
+            "icon": "guild_shrine_spirit",
+            "shrine": "spirit"
+          },
+          {
+            "kind": "combat",
+            "slot": "spirit_combat",
+            "zh": "精神神龛（战斗）",
+            "en": "Spirit Shrine (Combat)",
+            "buffHrid": "/guild_buffs/spirit_combat",
+            "affectsTrial": false,
+            "affectsCombat": true,
+            "buffs": [
+              {
+                "type": "max_hitpoints",
+                "mode": "ratio",
+                "perLevel": 0.01
+              },
+              {
+                "type": "max_manapoints",
+                "mode": "ratio",
+                "perLevel": 0.01
+              }
+            ],
+            "effectZh": "生命/法力上限 +1%/级",
+            "effectEn": "Max HP/MP +1%/lv",
+            "icon": "guild_shrine_spirit",
+            "shrine": "spirit"
+          }
+        ],
+        "combatHrid": "/guild_buffs/spirit_combat",
+        "affectsCombat": true
       },
       {
         "key": "rarity",
@@ -657,8 +906,50 @@
         "affectsTrial": false,
         "effectZh": "稀有掉率 +1%/级",
         "effectEn": "Rare Find +1%/lv",
-        "combatZh": "稀有掉率 +1%/级",
-        "combatEn": "Rare Find +1%/lv"
+        "variants": [
+          {
+            "kind": "skilling",
+            "slot": "rarity_skilling",
+            "zh": "稀有神龛（生活）",
+            "en": "Rarity Shrine (Skilling)",
+            "buffHrid": "/guild_buffs/rarity_skilling",
+            "affectsTrial": false,
+            "affectsCombat": false,
+            "buffs": [
+              {
+                "type": "rare_find",
+                "mode": "flat",
+                "perLevel": 0.01
+              }
+            ],
+            "effectZh": "稀有掉率 +1%/级",
+            "effectEn": "Rare Find +1%/lv",
+            "icon": "guild_shrine_rarity",
+            "shrine": "rarity"
+          },
+          {
+            "kind": "combat",
+            "slot": "rarity_combat",
+            "zh": "稀有神龛（战斗）",
+            "en": "Rarity Shrine (Combat)",
+            "buffHrid": "/guild_buffs/rarity_combat",
+            "affectsTrial": false,
+            "affectsCombat": true,
+            "buffs": [
+              {
+                "type": "rare_find",
+                "mode": "flat",
+                "perLevel": 0.01
+              }
+            ],
+            "effectZh": "稀有掉率 +1%/级",
+            "effectEn": "Rare Find +1%/lv",
+            "icon": "guild_shrine_rarity",
+            "shrine": "rarity"
+          }
+        ],
+        "combatHrid": "/guild_buffs/rarity_combat",
+        "affectsCombat": true
       },
       {
         "key": "scholar",
@@ -671,8 +962,50 @@
         "affectsTrial": false,
         "effectZh": "智慧(经验) +0.5%/级",
         "effectEn": "Wisdom (XP) +0.5%/lv",
-        "combatZh": "智慧(经验) +0.5%/级",
-        "combatEn": "Wisdom (XP) +0.5%/lv"
+        "variants": [
+          {
+            "kind": "skilling",
+            "slot": "scholar_skilling",
+            "zh": "学者神龛（生活）",
+            "en": "Scholar Shrine (Skilling)",
+            "buffHrid": "/guild_buffs/scholar_skilling",
+            "affectsTrial": false,
+            "affectsCombat": false,
+            "buffs": [
+              {
+                "type": "wisdom",
+                "mode": "flat",
+                "perLevel": 0.005
+              }
+            ],
+            "effectZh": "智慧(经验) +0.5%/级",
+            "effectEn": "Wisdom (XP) +0.5%/lv",
+            "icon": "guild_shrine_scholar",
+            "shrine": "scholar"
+          },
+          {
+            "kind": "combat",
+            "slot": "scholar_combat",
+            "zh": "学者神龛（战斗）",
+            "en": "Scholar Shrine (Combat)",
+            "buffHrid": "/guild_buffs/scholar_combat",
+            "affectsTrial": false,
+            "affectsCombat": true,
+            "buffs": [
+              {
+                "type": "wisdom",
+                "mode": "flat",
+                "perLevel": 0.005
+              }
+            ],
+            "effectZh": "智慧(经验) +0.5%/级",
+            "effectEn": "Wisdom (XP) +0.5%/lv",
+            "icon": "guild_shrine_scholar",
+            "shrine": "scholar"
+          }
+        ],
+        "combatHrid": "/guild_buffs/scholar_combat",
+        "affectsCombat": true
       }
     ],
     "skillingBuffs": {
@@ -1532,5 +1865,638 @@
         }
       }
     }
+  },
+  "houseRoom": {
+    "maxLevel": 20,
+    "keys": [
+      "dairy_barn",
+      "garden",
+      "log_shed",
+      "forge",
+      "workshop",
+      "sewing_parlor",
+      "kitchen",
+      "brewery",
+      "laboratory",
+      "observatory",
+      "archery_range",
+      "armory",
+      "dining_room",
+      "dojo",
+      "gym",
+      "library",
+      "mystical_study"
+    ],
+    "skillingKeys": [
+      "dairy_barn",
+      "garden",
+      "log_shed",
+      "forge",
+      "workshop",
+      "sewing_parlor",
+      "kitchen",
+      "brewery",
+      "laboratory",
+      "observatory"
+    ],
+    "combatKeys": [
+      "archery_range",
+      "armory",
+      "dining_room",
+      "dojo",
+      "gym",
+      "library",
+      "mystical_study"
+    ],
+    "icons": {
+      "dairy_barn": "house_dairy_barn",
+      "garden": "house_garden",
+      "log_shed": "house_log_shed",
+      "forge": "house_forge",
+      "workshop": "house_workshop",
+      "sewing_parlor": "house_sewing_parlor",
+      "kitchen": "house_kitchen",
+      "brewery": "house_brewery",
+      "laboratory": "house_laboratory",
+      "observatory": "house_observatory",
+      "archery_range": "house_archery_range",
+      "armory": "house_armory",
+      "dining_room": "house_dining_room",
+      "dojo": "house_dojo",
+      "gym": "house_gym",
+      "library": "house_library",
+      "mystical_study": "house_mystical_study"
+    },
+    "defs": [
+      {
+        "key": "dairy_barn",
+        "hrid": "/house_rooms/dairy_barn",
+        "icon": "house_dairy_barn",
+        "zh": "奶牛棚",
+        "en": "Dairy Barn",
+        "skill": "milking",
+        "kind": "skilling",
+        "actionBuffs": [
+          {
+            "type": "efficiency",
+            "mode": "flat",
+            "perLevel": 0.015
+          }
+        ],
+        "globalBuffs": [
+          {
+            "type": "wisdom",
+            "mode": "flat",
+            "perLevel": 0.0005
+          },
+          {
+            "type": "rare_find",
+            "mode": "flat",
+            "perLevel": 0.002
+          }
+        ],
+        "effectZh": "效率 +1.5%/级",
+        "effectEn": "Efficiency +1.5%/lv",
+        "affectsTrial": true,
+        "affectsCombat": false
+      },
+      {
+        "key": "garden",
+        "hrid": "/house_rooms/garden",
+        "icon": "house_garden",
+        "zh": "花园",
+        "en": "Garden",
+        "skill": "foraging",
+        "kind": "skilling",
+        "actionBuffs": [
+          {
+            "type": "efficiency",
+            "mode": "flat",
+            "perLevel": 0.015
+          }
+        ],
+        "globalBuffs": [
+          {
+            "type": "wisdom",
+            "mode": "flat",
+            "perLevel": 0.0005
+          },
+          {
+            "type": "rare_find",
+            "mode": "flat",
+            "perLevel": 0.002
+          }
+        ],
+        "effectZh": "效率 +1.5%/级",
+        "effectEn": "Efficiency +1.5%/lv",
+        "affectsTrial": true,
+        "affectsCombat": false
+      },
+      {
+        "key": "log_shed",
+        "hrid": "/house_rooms/log_shed",
+        "icon": "house_log_shed",
+        "zh": "木棚",
+        "en": "Log Shed",
+        "skill": "woodcutting",
+        "kind": "skilling",
+        "actionBuffs": [
+          {
+            "type": "efficiency",
+            "mode": "flat",
+            "perLevel": 0.015
+          }
+        ],
+        "globalBuffs": [
+          {
+            "type": "wisdom",
+            "mode": "flat",
+            "perLevel": 0.0005
+          },
+          {
+            "type": "rare_find",
+            "mode": "flat",
+            "perLevel": 0.002
+          }
+        ],
+        "effectZh": "效率 +1.5%/级",
+        "effectEn": "Efficiency +1.5%/lv",
+        "affectsTrial": true,
+        "affectsCombat": false
+      },
+      {
+        "key": "forge",
+        "hrid": "/house_rooms/forge",
+        "icon": "house_forge",
+        "zh": "锻造台",
+        "en": "Forge",
+        "skill": "cheesesmithing",
+        "kind": "skilling",
+        "actionBuffs": [
+          {
+            "type": "efficiency",
+            "mode": "flat",
+            "perLevel": 0.015
+          }
+        ],
+        "globalBuffs": [
+          {
+            "type": "wisdom",
+            "mode": "flat",
+            "perLevel": 0.0005
+          },
+          {
+            "type": "rare_find",
+            "mode": "flat",
+            "perLevel": 0.002
+          }
+        ],
+        "effectZh": "效率 +1.5%/级",
+        "effectEn": "Efficiency +1.5%/lv",
+        "affectsTrial": true,
+        "affectsCombat": false
+      },
+      {
+        "key": "workshop",
+        "hrid": "/house_rooms/workshop",
+        "icon": "house_workshop",
+        "zh": "工作间",
+        "en": "Workshop",
+        "skill": "crafting",
+        "kind": "skilling",
+        "actionBuffs": [
+          {
+            "type": "efficiency",
+            "mode": "flat",
+            "perLevel": 0.015
+          }
+        ],
+        "globalBuffs": [
+          {
+            "type": "wisdom",
+            "mode": "flat",
+            "perLevel": 0.0005
+          },
+          {
+            "type": "rare_find",
+            "mode": "flat",
+            "perLevel": 0.002
+          }
+        ],
+        "effectZh": "效率 +1.5%/级",
+        "effectEn": "Efficiency +1.5%/lv",
+        "affectsTrial": true,
+        "affectsCombat": false
+      },
+      {
+        "key": "sewing_parlor",
+        "hrid": "/house_rooms/sewing_parlor",
+        "icon": "house_sewing_parlor",
+        "zh": "缝纫室",
+        "en": "Sewing Parlor",
+        "skill": "tailoring",
+        "kind": "skilling",
+        "actionBuffs": [
+          {
+            "type": "efficiency",
+            "mode": "flat",
+            "perLevel": 0.015
+          }
+        ],
+        "globalBuffs": [
+          {
+            "type": "wisdom",
+            "mode": "flat",
+            "perLevel": 0.0005
+          },
+          {
+            "type": "rare_find",
+            "mode": "flat",
+            "perLevel": 0.002
+          }
+        ],
+        "effectZh": "效率 +1.5%/级",
+        "effectEn": "Efficiency +1.5%/lv",
+        "affectsTrial": true,
+        "affectsCombat": false
+      },
+      {
+        "key": "kitchen",
+        "hrid": "/house_rooms/kitchen",
+        "icon": "house_kitchen",
+        "zh": "厨房",
+        "en": "Kitchen",
+        "skill": "cooking",
+        "kind": "skilling",
+        "actionBuffs": [
+          {
+            "type": "efficiency",
+            "mode": "flat",
+            "perLevel": 0.015
+          }
+        ],
+        "globalBuffs": [
+          {
+            "type": "wisdom",
+            "mode": "flat",
+            "perLevel": 0.0005
+          },
+          {
+            "type": "rare_find",
+            "mode": "flat",
+            "perLevel": 0.002
+          }
+        ],
+        "effectZh": "效率 +1.5%/级",
+        "effectEn": "Efficiency +1.5%/lv",
+        "affectsTrial": true,
+        "affectsCombat": false
+      },
+      {
+        "key": "brewery",
+        "hrid": "/house_rooms/brewery",
+        "icon": "house_brewery",
+        "zh": "冲泡坊",
+        "en": "Brewery",
+        "skill": "brewing",
+        "kind": "skilling",
+        "actionBuffs": [
+          {
+            "type": "efficiency",
+            "mode": "flat",
+            "perLevel": 0.015
+          }
+        ],
+        "globalBuffs": [
+          {
+            "type": "wisdom",
+            "mode": "flat",
+            "perLevel": 0.0005
+          },
+          {
+            "type": "rare_find",
+            "mode": "flat",
+            "perLevel": 0.002
+          }
+        ],
+        "effectZh": "效率 +1.5%/级",
+        "effectEn": "Efficiency +1.5%/lv",
+        "affectsTrial": true,
+        "affectsCombat": false
+      },
+      {
+        "key": "laboratory",
+        "hrid": "/house_rooms/laboratory",
+        "icon": "house_laboratory",
+        "zh": "实验室",
+        "en": "Laboratory",
+        "skill": "alchemy",
+        "kind": "skilling",
+        "actionBuffs": [
+          {
+            "type": "efficiency",
+            "mode": "flat",
+            "perLevel": 0.015
+          }
+        ],
+        "globalBuffs": [
+          {
+            "type": "wisdom",
+            "mode": "flat",
+            "perLevel": 0.0005
+          },
+          {
+            "type": "rare_find",
+            "mode": "flat",
+            "perLevel": 0.002
+          }
+        ],
+        "effectZh": "效率 +1.5%/级",
+        "effectEn": "Efficiency +1.5%/lv",
+        "affectsTrial": true,
+        "affectsCombat": false
+      },
+      {
+        "key": "observatory",
+        "hrid": "/house_rooms/observatory",
+        "icon": "house_observatory",
+        "zh": "天文台",
+        "en": "Observatory",
+        "skill": "enhancing",
+        "kind": "skilling",
+        "actionBuffs": [
+          {
+            "type": "action_speed",
+            "mode": "flat",
+            "perLevel": 0.01
+          },
+          {
+            "type": "enhancing_success",
+            "mode": "ratio",
+            "perLevel": 0.0005
+          }
+        ],
+        "globalBuffs": [
+          {
+            "type": "wisdom",
+            "mode": "flat",
+            "perLevel": 0.0005
+          },
+          {
+            "type": "rare_find",
+            "mode": "flat",
+            "perLevel": 0.002
+          }
+        ],
+        "effectZh": "动作速度 +1%/级、强化成功率 +0.05%/级",
+        "effectEn": "Action Speed +1%/lv, Enhance Success +0.05%/lv",
+        "affectsTrial": true,
+        "affectsCombat": false
+      },
+      {
+        "key": "archery_range",
+        "hrid": "/house_rooms/archery_range",
+        "icon": "house_archery_range",
+        "zh": "射箭场",
+        "en": "Archery Range",
+        "skill": "",
+        "kind": "combat",
+        "actionBuffs": [
+          {
+            "type": "ranged_level",
+            "mode": "flat",
+            "perLevel": 1
+          }
+        ],
+        "globalBuffs": [
+          {
+            "type": "wisdom",
+            "mode": "flat",
+            "perLevel": 0.0005
+          },
+          {
+            "type": "rare_find",
+            "mode": "flat",
+            "perLevel": 0.002
+          }
+        ],
+        "effectZh": "远程等级 +1/级",
+        "effectEn": "Ranged Level +1/lv",
+        "affectsTrial": false,
+        "affectsCombat": true
+      },
+      {
+        "key": "armory",
+        "hrid": "/house_rooms/armory",
+        "icon": "house_armory",
+        "zh": "军械库",
+        "en": "Armory",
+        "skill": "",
+        "kind": "combat",
+        "actionBuffs": [
+          {
+            "type": "defense_level",
+            "mode": "flat",
+            "perLevel": 1
+          }
+        ],
+        "globalBuffs": [
+          {
+            "type": "wisdom",
+            "mode": "flat",
+            "perLevel": 0.0005
+          },
+          {
+            "type": "rare_find",
+            "mode": "flat",
+            "perLevel": 0.002
+          }
+        ],
+        "effectZh": "防御等级 +1/级",
+        "effectEn": "Defense Level +1/lv",
+        "affectsTrial": false,
+        "affectsCombat": true
+      },
+      {
+        "key": "dining_room",
+        "hrid": "/house_rooms/dining_room",
+        "icon": "house_dining_room",
+        "zh": "餐厅",
+        "en": "Dining Room",
+        "skill": "",
+        "kind": "combat",
+        "actionBuffs": [
+          {
+            "type": "stamina_level",
+            "mode": "flat",
+            "perLevel": 1
+          },
+          {
+            "type": "hp_regen",
+            "mode": "flat",
+            "perLevel": 0.0003
+          }
+        ],
+        "globalBuffs": [
+          {
+            "type": "wisdom",
+            "mode": "flat",
+            "perLevel": 0.0005
+          },
+          {
+            "type": "rare_find",
+            "mode": "flat",
+            "perLevel": 0.002
+          }
+        ],
+        "effectZh": "耐力等级 +1/级、生命回复 +0.03%/级",
+        "effectEn": "Stamina Level +1/lv, HP Regen +0.03%/lv",
+        "affectsTrial": false,
+        "affectsCombat": true
+      },
+      {
+        "key": "dojo",
+        "hrid": "/house_rooms/dojo",
+        "icon": "house_dojo",
+        "zh": "道场",
+        "en": "Dojo",
+        "skill": "",
+        "kind": "combat",
+        "actionBuffs": [
+          {
+            "type": "attack_level",
+            "mode": "flat",
+            "perLevel": 1
+          },
+          {
+            "type": "attack_speed",
+            "mode": "ratio",
+            "perLevel": 0.005
+          },
+          {
+            "type": "cast_speed",
+            "mode": "flat",
+            "perLevel": 0.005
+          }
+        ],
+        "globalBuffs": [
+          {
+            "type": "wisdom",
+            "mode": "flat",
+            "perLevel": 0.0005
+          },
+          {
+            "type": "rare_find",
+            "mode": "flat",
+            "perLevel": 0.002
+          }
+        ],
+        "effectZh": "攻击等级 +1/级、攻击速度 +0.5%/级、施法速度 +0.5%/级",
+        "effectEn": "Attack Level +1/lv, Attack Speed +0.5%/lv, Cast Speed +0.5%/lv",
+        "affectsTrial": false,
+        "affectsCombat": true
+      },
+      {
+        "key": "gym",
+        "hrid": "/house_rooms/gym",
+        "icon": "house_gym",
+        "zh": "健身房",
+        "en": "Gym",
+        "skill": "",
+        "kind": "combat",
+        "actionBuffs": [
+          {
+            "type": "melee_level",
+            "mode": "flat",
+            "perLevel": 1
+          }
+        ],
+        "globalBuffs": [
+          {
+            "type": "wisdom",
+            "mode": "flat",
+            "perLevel": 0.0005
+          },
+          {
+            "type": "rare_find",
+            "mode": "flat",
+            "perLevel": 0.002
+          }
+        ],
+        "effectZh": "近战等级 +1/级",
+        "effectEn": "Melee Level +1/lv",
+        "affectsTrial": false,
+        "affectsCombat": true
+      },
+      {
+        "key": "library",
+        "hrid": "/house_rooms/library",
+        "icon": "house_library",
+        "zh": "图书馆",
+        "en": "Library",
+        "skill": "",
+        "kind": "combat",
+        "actionBuffs": [
+          {
+            "type": "intelligence_level",
+            "mode": "flat",
+            "perLevel": 1
+          },
+          {
+            "type": "mp_regen",
+            "mode": "flat",
+            "perLevel": 0.0003
+          }
+        ],
+        "globalBuffs": [
+          {
+            "type": "wisdom",
+            "mode": "flat",
+            "perLevel": 0.0005
+          },
+          {
+            "type": "rare_find",
+            "mode": "flat",
+            "perLevel": 0.002
+          }
+        ],
+        "effectZh": "智力等级 +1/级、法力回复 +0.03%/级",
+        "effectEn": "Intelligence Level +1/lv, MP Regen +0.03%/lv",
+        "affectsTrial": false,
+        "affectsCombat": true
+      },
+      {
+        "key": "mystical_study",
+        "hrid": "/house_rooms/mystical_study",
+        "icon": "house_mystical_study",
+        "zh": "神秘研究室",
+        "en": "Mystical Study",
+        "skill": "",
+        "kind": "combat",
+        "actionBuffs": [
+          {
+            "type": "magic_level",
+            "mode": "flat",
+            "perLevel": 1
+          }
+        ],
+        "globalBuffs": [
+          {
+            "type": "wisdom",
+            "mode": "flat",
+            "perLevel": 0.0005
+          },
+          {
+            "type": "rare_find",
+            "mode": "flat",
+            "perLevel": 0.002
+          }
+        ],
+        "effectZh": "魔法等级 +1/级",
+        "effectEn": "Magic Level +1/lv",
+        "affectsTrial": false,
+        "affectsCombat": true
+      }
+    ]
   }
 }

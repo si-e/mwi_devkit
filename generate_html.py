@@ -184,7 +184,18 @@ h2 { font-size:16px; margin:10px 0 8px; color:var(--text-muted); }
 .global-buff-hint { font-size:11px; color:var(--text-faint); font-weight:400; cursor:help; }
 .global-buff-hint::before { content:'ℹ'; display:inline-block; width:14px; height:14px; line-height:14px; text-align:center; border:1px solid var(--border); border-radius:50%; }
 .global-buff-bar { display:flex; flex-wrap:wrap; gap:14px; align-items:center; }
-.global-buff-item { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border:1px solid var(--border); border-radius:4px; background:var(--conn-bg); font-size:12px; color:var(--text); cursor:pointer; }
+/* 公会建筑栏：三块（功能/生活/战斗）各占一行 */
+.global-buff-bar.is-stacked { flex-direction:column; gap:8px; align-items:stretch; }
+/* 三块（功能/生活类/战斗类）各自占一行；行内是「每行最多 5 个」的等宽网格
+   —— 等宽列让字数不同的建筑名也自动按最宽的那一列对齐 */
+.global-buff-row { display:flex; align-items:flex-start; gap:10px; }
+.global-buff-grid { flex:1; min-width:0; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px 10px; }
+@media(max-width:1100px){ .global-buff-grid { grid-template-columns:repeat(4,minmax(0,1fr)); } }
+@media(max-width:860px){ .global-buff-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+@media(max-width:640px){ .global-buff-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+.global-buff-item { display:flex; align-items:center; gap:6px; min-width:0; padding:4px 10px; border:1px solid var(--border); border-radius:4px; background:var(--conn-bg); font-size:12px; color:var(--text); cursor:pointer; }
+/* 网格里标签占满剩余宽度 → 等级输入框右对齐（不同字数也能对齐） */
+.global-buff-grid .global-buff-label { flex:1; min-width:0; word-break:break-word; }
 .global-buff-item .global-buff-icon { width:18px; height:18px; flex:0 0 auto; vertical-align:middle; }
 .global-buff-item input { width:48px; padding:2px 6px; border:1px solid var(--border); border-radius:3px; background:var(--input-bg); color:var(--text); font-size:12px; text-align:center; }
 .global-buff-item input:focus { outline:none; border-color:var(--accent); }
@@ -195,10 +206,8 @@ h2 { font-size:16px; margin:10px 0 8px; color:var(--text-muted); }
 .global-buff-item.is-life { border-color:var(--border); }
 .global-buff-item.is-combat { opacity:.8; }
 .global-buff-tag { font-size:10px; line-height:1; color:var(--accent); border:1px solid var(--accent); border-radius:3px; padding:2px 4px; }
-.global-buff-group-label { font-size:11px; color:var(--text-faint); align-self:center; }
+.global-buff-group-label { font-size:11px; color:var(--text-faint); flex:0 0 auto; width:64px; padding-top:6px; text-align:right; }
 .global-buff-subhint { font-size:11px; font-weight:400; color:var(--text-faint); }
-.global-buff-sep { width:1px; align-self:stretch; min-height:20px; background:var(--border); margin:0 4px; }
-.personal-shrine-badge { display:block; font-size:10px; color:var(--text-faint); margin-top:2px; }
 
 /* Trial Config */
 .trial-section { padding:10px 20px; }
@@ -231,21 +240,58 @@ h2 { font-size:16px; margin:10px 0 8px; color:var(--text-muted); }
 table.member-table { border-collapse:collapse; width:max-content; min-width:100%; }
 table.member-table th, table.member-table td { border:1px solid var(--border); padding:4px 6px; text-align:center; white-space:nowrap; }
 table.member-table th { background:var(--table-header); font-size:11px; font-weight:600; color:var(--text-muted); position:sticky; top:0; z-index:5; }
-table.member-table th.skill-col { min-width:52px; }
-table.member-table th.skill-col svg { width:20px; height:20px; vertical-align:middle; }
-table.member-table th.equip-col { min-width:48px; font-size:10px; padding:4px 2px; white-space:nowrap; }
 table.member-table th.assign-col { min-width:44px; }
-table.member-table th.name-col { min-width:90px; text-align:left; }
+table.member-table th.name-col { min-width:150px; text-align:left; }
 table.member-table td.name-cell { text-align:left; }
 table.member-table td input { width:100%; border:1px solid transparent; background:transparent; font-size:13px; padding:2px 4px; border-radius:3px; color:var(--text); }
 table.member-table td input:focus { border-color:var(--accent); background:var(--input-bg); outline:none; }
-table.member-table td.skill-input input { width:52px; text-align:center; }
-/* 个人神龛列：与技能列同宽；不影响试炼的 3 项置灰 */
-table.member-table th.shrine-col { min-width:52px; }
-table.member-table th.shrine-col svg { width:20px; height:20px; vertical-align:middle; }
-table.member-table th.shrine-col.is-inactive { opacity:.55; }
-table.member-table td.shrine-input.is-inactive { opacity:.55; }
-table.member-table td.shrine-input.is-inactive input { color:var(--text-faint); }
+/* 「详情」列：专业 / 装备 / 房屋 / 神龛 / 成就 等全部个人数据移入成员详情弹窗 */
+table.member-table th.detail-col { min-width:52px; }
+table.member-table td.detail-cell { text-align:center; }
+/* 成员详情弹窗正文（专业 / 装备 / 房屋 / 神龛 / 成就，按分组网格排布） */
+.detail-body { overflow-y:auto; min-height:0; }
+.detail-section { border-top:1px solid var(--border); padding-top:8px; }
+.detail-section:first-child { border-top:none; padding-top:0; }
+.detail-section-title { font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:6px; cursor:help; }
+/* 分组网格：每行最多 5 个；页面（或缩放）变窄时自动降到 4 / 3 / 2 个 */
+.detail-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; }
+.detail-grid.cols-5 { grid-template-columns:repeat(5,minmax(0,1fr)); }
+@media(max-width:1100px){ .detail-grid, .detail-grid.cols-5 { grid-template-columns:repeat(4,minmax(0,1fr)); } }
+@media(max-width:860px){ .detail-grid, .detail-grid.cols-5 { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+@media(max-width:640px){ .detail-grid, .detail-grid.cols-5 { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+.detail-item { display:flex; align-items:center; gap:6px; padding:4px 6px; border:1px solid var(--border); border-radius:6px; }
+.detail-item.is-inactive { opacity:.55; }
+.detail-item svg { width:20px; height:20px; flex:none; }
+.detail-item .di-label { flex:1; min-width:0; font-size:10px; line-height:1.15; color:var(--text-muted); word-break:break-word; }
+.detail-item .di-sub { display:block; color:var(--text-faint); }
+.detail-item input[type=number] { width:46px; flex:none; text-align:center; border:1px solid var(--border); background:var(--input-bg); border-radius:4px; color:var(--text); font-size:12px; padding:1px 2px; }
+.detail-item input[type=checkbox] { width:auto; margin:0; cursor:pointer; accent-color:var(--accent); flex:none; }
+/* 详情里的装备槽：图标 + 强化角标，点击打开装备选择器 */
+.detail-item .equip-cell { width:30px; height:30px; flex:none; margin-left:auto; }
+.detail-item .equip-cell svg { width:24px; height:24px; }
+/* 神龛分两行：上行「生活类」、下行「战斗类」 */
+.detail-rows { display:flex; flex-direction:column; gap:6px; }
+.detail-row { display:flex; align-items:center; gap:8px; }
+.detail-row-label { flex:none; width:40px; font-size:10px; color:var(--text-faint); text-align:right; }
+.detail-row .detail-grid { flex:1; min-width:0; }
+/* 生活装备区：与工具 / 战斗装备同款的方格，每行最多 5 个（格子只有图标，物品名在悬停提示里）。
+   方格的「未拥有 / 已拥有」样式见下方 .equip-cell.own-cell。 */
+.own-rows { display:flex; flex-direction:column; gap:6px; }
+.own-row { display:flex; align-items:flex-start; gap:8px; }
+.own-row-label { flex:none; width:64px; padding-top:10px; font-size:11px; color:var(--text-muted); text-align:right; }
+.own-chips { flex:1; min-width:0; display:grid; grid-template-columns:repeat(5,36px); gap:6px; justify-content:start; }
+/* 强化等级小面板（点 chip 正文弹出，挂在 body 上，不被弹窗滚动容器裁切） */
+.enh-pop { position:fixed; z-index:400; width:214px; background:var(--modal-bg); border:1px solid var(--border); border-radius:8px; padding:8px; box-shadow:0 6px 18px var(--shadow); display:flex; flex-direction:column; gap:6px; }
+.enh-pop-title { font-size:12px; font-weight:600; color:var(--text); }
+.enh-pop-title .enh-pop-slot { font-weight:400; color:var(--text-faint); font-size:10px; }
+.enh-pop-row { display:flex; align-items:center; gap:4px; }
+.enh-pop-step { width:26px; height:26px; flex:none; border:1px solid var(--border); background:var(--input-bg); color:var(--text); border-radius:5px; cursor:pointer; font-size:14px; line-height:1; }
+.enh-pop-step:hover { border-color:var(--accent); }
+.enh-pop-input { width:56px; flex:none; text-align:center; border:1px solid var(--border); background:var(--input-bg); border-radius:5px; color:var(--text); font-size:13px; padding:3px 2px; }
+.enh-pop-unit { font-size:10px; color:var(--text-faint); }
+.enh-pop-star { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-muted); cursor:pointer; }
+.enh-pop-star input { margin:0; cursor:pointer; accent-color:var(--accent); }
+.enh-pop-actions { display:flex; justify-content:space-between; gap:6px; }
 table.member-table tr:hover { background:var(--table-hover); }
 table.member-table td.assign-cell { font-weight:600; font-size:12px; }
 table.member-table td.assign-cell svg { width:22px; height:22px; }
@@ -261,6 +307,15 @@ table.member-table td.assign-cell svg { width:22px; height:22px; }
 .equip-cell svg { width:30px; height:30px; }
 .equip-cell .enhance-badge { position:absolute; top:-2px; left:-2px; background:var(--enhance-badge-bg); color:var(--enhance-badge-fg); font-size:9px; font-weight:700; border-radius:3px; padding:0 2px; line-height:12px; }
 .equip-cell.empty::after { content:'+'; color:var(--text-faint); font-size:16px; }
+/* 生活装备「拥有制」方格：只有图标（物品名在悬停提示里，与工具 / 战斗装备一致）。
+   未拥有 → 虚线框 + 图标灰度（点一下即以 +0 拥有并打开强化面板）；已拥有 → 实线高亮 + 左上角标「★ +N」。 */
+.equip-cell.own-cell svg { width:26px; height:26px; }
+.equip-cell.own-cell.is-off { border-style:dashed; }
+.equip-cell.own-cell.is-off svg { filter:grayscale(1); opacity:.4; }
+.equip-cell.own-cell.is-owned { border-color:var(--accent); background:var(--equip-hover); }
+.equip-cell .own-badges { position:absolute; top:-4px; left:-4px; display:flex; align-items:center; gap:2px; }
+.equip-cell .own-badges .enhance-badge { position:static; top:auto; left:auto; }
+.equip-cell .own-badges .refine-star { color:#e8b339; font-size:11px; line-height:1; }
 
 /* Skill picker popup */
 .skill-picker-popup { position:absolute; background:var(--modal-bg); border:1px solid var(--border); border-radius:8px; padding:8px; z-index:200; display:grid; grid-template-columns:repeat(5,1fr); gap:6px; box-shadow:0 4px 12px var(--shadow); }
@@ -320,8 +375,11 @@ JS = r'''
 const I18N = {
   zh: {
     title:'MWI 试炼计算器', trialConfig:'试炼配置', memberData:'成员数据',
-    addMember:'添加成员', share:'共享设置', importData:'导入',
+    addMember:'添加成员', share:'共享设置', importData:'导入', exportData:'导出',
     exportScriptTitle:'下载油猴脚本，自动采集公会成员数据导出为 JSON',
+    exportEmpty:'暂无可导出的成员数据',
+    exportSuccess:'已导出',
+    importFormatUnknown:'无法识别的 JSON：应为「本计算器导出的备份」或「游戏成员 profile 数组」',
     calculate:'计算最优分配', assignCol:'分配', nameCol:'角色名', maxMembers:'人数上限',
     trialSlotsAuto:'由生活营地决定', trialSlotsFromCamp:'生活营地 Lv{level}：{base} + {level}×{per} = {cap}',
     noAssign:'(暂无分配)', noMembers:'暂无成员数据，请添加成员或导入 JSON',
@@ -342,11 +400,36 @@ const I18N = {
     globalBuffs:'全局加成',
     globalBuffsTip:'手动输入你所在服务器/账号的社区大厅全局 buff 等级：0 = 无 buff，1~20 级启用。加成 = 19.5 + 等级×0.5（%），仅本地保存，每个玩家按自己实际情况填。',
     guildBuildings:'公会建筑', guildBuildingsTip:'对齐游戏 23 座建筑（上限 20 级），仅在本公会试炼期间生效。生活类/战斗类建筑为对应技能提供 +2 有效等级；功能建筑不影响试炼层数。建筑等级为公会全局，会随共享数据一起上传。',
-    guildShrinePerMember:'神龛(个人)', guildShrinePerMemberTip:'力量/节奏神龛是「个人增益」（公会商店购买，上限受公会神龛等级限制），逐人填写，随共享数据一起上传。官方每级数值：力量 效率+0.5%、节奏 动作速度+0.5%、精神 精华掉率+2%、稀有 稀有掉率+1%、学者 智慧+0.5%。只有 力量/节奏 影响试炼层数。',
+    guildShrinePerMember:'神龛(个人)', guildShrinePerMemberTip:'神龛是「个人持久化数据」：逐成员填写，随共享数据一起上传。每座神龛分「生活」与「战斗」两种变体：生活增益计入生活试炼推演（力量 效率+0.5%/级、节奏 动作速度+0.5%/级、精神 精华掉率+2%/级、稀有 稀有掉率+1%/级、学者 智慧+0.5%/级）；战斗增益（力量 伤害+0.3%/级、节奏 攻击/施法速度+0.4%/级、精神 生命/法力上限+1%/级 等）为后续战斗试炼预留，暂不计入推演。',
+    shrineKindSkilling:'生活', shrineKindCombat:'战斗',
+    shrineCombatOnly:'仅影响战斗试炼（暂未模拟）',
+    houseRoomsCol:'房屋', houseRoomsTip:'房屋房间是「个人持久化数据」：逐成员填写等级，随共享数据一起上传。生活房间（奶牛棚/花园/木棚 等 效率+1.5%/级；天文台 动作速度+1%/级、强化成功率+0.05%/级）计入生活试炼推演；战斗房间（道场/军械库/健身房 等）为后续战斗试炼预留。数值取自游戏 houseRoomDetailMap。',
+    houseRoomsSkilling:'生活', houseRoomsCombat:'战斗',
     guildBuildingsUtility:'功能建筑', guildBuildingsLife:'生活类建筑', guildBuildingsCombat:'战斗类建筑',
     guildBuildingsShared:'公会全局 · 随共享上传',
     shrineAffectsTrial:'影响试炼层数', shrineNotAffectsTrial:'不影响试炼层数',
     shrineCol:'神龛',
+    achievementsCol:'成就',
+    memberDetail:'成员详情', detailBtn:'详情',
+    memberDetailTip:'成员的「专业等级 / 装备 / 房屋 / 神龛 / 成就」等全部个人数据都在详情弹窗里编辑（点该行「详情」按钮），随共享数据一起上传；不影响试炼推演的项显示为灰色。',
+    detailSkillSec:'专业等级', detailEquipSec:'装备', detailShrineSec:'神龛', detailAchSec:'成就完成', detailHouseSec:'房屋',
+    detailShrineSkillingRow:'生活类', detailShrineCombatRow:'战斗类',
+    detailSkillTip:'专业等级属于「个人持久化数据」：逐成员填写，随共享数据一起上传。',
+    detailEquipTip:'装备分三区：生活装备（只加生活技能加成）、生活 · 战斗两用、战斗装备 / 生活工具。点方格设置强化等级与 ★ 精炼。',
+    lifeEquipSec:'生活装备',
+    lifeEquipTip:'只加生活技能加成、没有战斗加成。同一槽位里有多个互不替代的物品，勾选你拥有的即可；推演时每个试炼技能自动取该槽位里收益最高的一件。点方格设置强化等级与 ★ 精炼。',
+    lifeSingleRow:'单件',
+    hybridEquipSec:'生活 · 战斗两用',
+    hybridEquipTip:'项链 / 耳环 / 戒指 / 袋子：同一槽位既可选生活件也可选战斗件，而你只能穿一件，点方格打开选择器二选一。袋子对试炼没有任何加成。',
+    lifeToolsSec:'生活工具',
+    lifeToolsTip:'生活工具存在上下位替代，只需记录当前使用的那一件。',
+    combatEquipSec:'战斗装备',
+    combatEquipTip:'一槽一件，与生活装备互不争抢。副手 / 头部 / 身体 / 手部 / 腿部 / 脚部 / 背部 的生活件在上方「生活装备」区勾选，这里的选择器已把它们排除。',
+    lifeSlotLabels:{ '身体':'上衣', '腿部':'下装', '背部':'披风', '头部':'头部', '手部':'手部', '脚部':'脚部', '副手':'副手' },
+    refineToggle:'精炼',
+    unownBtn:'取消拥有',
+    enhDone:'完成',
+    achievementsTip:'成就档位是「个人持久化数据」：逐成员勾选「该档全部成就已完成」，随共享数据一起上传。共 6 档：初学者 采集数量+2%、新手 经验+2%、熟练者 效率+2%、老手 稀有发现+2%、精英 伤害+2%、冠军 强化成功率+0.2%。影响生活试炼推演的是 初学者/熟练者/冠军；精英为战斗增益（为后续战斗试炼预留）。数值取自游戏 achievementTierDetailMap。',
     guildHallTip:'增加公会成员上限', buildersHallTip:'提高公会点数获取', treasuryTip:'提高公会代币奖励',
     archivesTip:'提高公会经验获取', skillingCampTip:'参加生活试炼人数 +2/级（人数上限 = 20 + 等级×2）', combatCampTip:'参加战斗试炼人数 +2/级（暂未模拟战斗试炼）',
     buffGathering:'采集数量', buffGatheringTip:'仅对采集类技能（挤奶/采摘/伐木）的双倍产出概率生效；0=无，1~20 级，加成 = 19.5 + 等级×0.5（%）。',
@@ -355,12 +438,14 @@ const I18N = {
     levelUnit:'级',
     skillLabels:['挤奶','采摘','伐木','奶酪锻造','制作','缝纫','烹饪','冲泡','炼金','强化'],
     equipLabels:['主手','副手','头部','身体','手部','腿部','脚部','项链','耳环','戒指','袋子','背部','挤奶工具','采摘工具','伐木工具','奶酪锻造工具','制作工具','缝纫工具','烹饪工具','冲泡工具','炼金工具','强化工具'],
-    equipShort:['主手','副手','头部','身体','手部','腿部','脚部','项链','耳环','戒指','袋子','背部','挤奶','采摘','伐木','奶酪','制作','缝纫','烹饪','冲泡','炼金','强化'],
   },
   en: {
     title:'MWI Trial Calculator', trialConfig:'Trial Config', memberData:'Member Data',
-    addMember:'Add Member', share:'Share', importData:'Import',
+    addMember:'Add Member', share:'Share', importData:'Import', exportData:'Export',
     exportScriptTitle:'Download userscript to auto-collect guild member data as JSON',
+    exportEmpty:'No member data to export',
+    exportSuccess:'Exported',
+    importFormatUnknown:'Unrecognized JSON: expected a calculator backup or a members profile array',
     calculate:'Calculate', assignCol:'Assign', nameCol:'Name', maxMembers:'Max',
     trialSlotsAuto:'set by Skilling Encampment', trialSlotsFromCamp:'Skilling Encampment Lv{level}: {base} + {level}×{per} = {cap}',
     noAssign:'(None)', noMembers:'No member data. Add members or import JSON.',
@@ -381,11 +466,36 @@ const I18N = {
     globalBuffs:'Global Buffs',
     globalBuffsTip:'Enter your server/account community-hall global buff level: 0 = none, 1~20 = active. Bonus = 19.5 + level×0.5 (%), stored locally only.',
     guildBuildings:'Guild Buildings', guildBuildingsTip:'Aligned with the 23 in-game buildings (max 20), active only during your own guild trials. Life/combat buildings give the matching skill +2 effective levels; utility buildings do not affect trial tiers. Building levels are guild-wide and are uploaded with the shared data.',
-    guildShrinePerMember:'Shrines (personal)', guildShrinePerMemberTip:'Force/Tempo shrine buffs are PERSONAL buffs (bought in the Guild Shop, capped by the guild shrine level). Fill them per member; they are uploaded with the shared data. Official per-level values: Force efficiency +0.5%, Tempo action speed +0.5%, Spirit essence find +2%, Rarity rare find +1%, Scholar wisdom +0.5%. Only Force/Tempo affect trial tiers.',
-    guildBuildingsUtility:'Utility', guildBuildingsLife:'Life', guildBuildingsCombat:'Combat',
+    guildShrinePerMember:'Shrines (personal)', guildShrinePerMemberTip:'Shrines are per-member persistent data: fill them per member, they upload with the shared data. Each shrine has a Skilling and a Combat variant: the skilling buffs count toward the skilling-trial metrics (Force efficiency +0.5%/lv, Tempo action speed +0.5%/lv, Spirit essence find +2%/lv, Rarity rare find +1%/lv, Scholar wisdom +0.5%/lv); the combat buffs (Force damage +0.3%/lv, Tempo attack/cast speed +0.4%/lv, Spirit max HP/MP +1%/lv, ...) are reserved for future combat trials and are not simulated yet.',
+    shrineKindSkilling:'Skilling', shrineKindCombat:'Combat',
+    shrineCombatOnly:'combat trials only (not simulated yet)',
+    houseRoomsCol:'House', houseRoomsTip:'House rooms are per-member persistent data: fill the level per member, they upload with the shared data. Skilling rooms (Dairy Barn/Garden/Log Shed etc., efficiency +1.5%/lv; Observatory action speed +1%/lv and enhance success +0.05%/lv) count toward the skilling-trial metrics; combat rooms (Dojo/Armory/Gym etc.) are reserved for future combat trials. Values come from the game\'s houseRoomDetailMap.',
+    houseRoomsSkilling:'Skilling', houseRoomsCombat:'Combat',
+    guildBuildingsUtility:'Utility', guildBuildingsLife:'Life Buildings', guildBuildingsCombat:'Combat Buildings',
     guildBuildingsShared:'Guild-wide · uploaded when shared',
     shrineAffectsTrial:'affects trial tiers', shrineNotAffectsTrial:'does not affect trial tiers',
     shrineCol:'Shrine',
+    achievementsCol:'Achievements',
+    memberDetail:'Member Details', detailBtn:'Details',
+    memberDetailTip:'All per-member personal data — skill levels, equipment, house rooms, shrines and achievements — is edited in the detail dialog (click Details on the row) and uploads with the shared data. Items that do not affect trials are dimmed.',
+    detailSkillSec:'Skill Levels', detailEquipSec:'Equipment', detailShrineSec:'Shrines', detailAchSec:'Achievements', detailHouseSec:'House rooms',
+    detailShrineSkillingRow:'Skilling', detailShrineCombatRow:'Combat',
+    detailSkillTip:'Skill levels are per-member persistent data: fill them per member; they upload with the shared data.',
+    detailEquipTip:'Three areas: Life gear (skilling bonuses only), Life / Combat hybrid, and Combat gear / Life tools. Click a cell to set the enhancement level and ★ refinement.',
+    lifeEquipSec:'Life gear',
+    lifeEquipTip:'Skilling bonuses only, no combat bonus. A slot may hold several non-interchangeable items — tick what you own; each trial skill auto-picks the best owned one. Click a cell to set the enhancement level and ★ refinement.',
+    lifeSingleRow:'Single',
+    hybridEquipSec:'Life / Combat hybrid',
+    hybridEquipTip:'Necklace / earrings / ring / pouch: one slot that can hold either kind, and you wear only one — click a cell to pick. Pouches give no trial bonus at all.',
+    lifeToolsSec:'Life tools',
+    lifeToolsTip:'Life tools have strict upgrades, so only the one currently in use needs recording.',
+    combatEquipSec:'Combat gear',
+    combatEquipTip:'One item per slot, never competing with life gear. Life items for the off hand / head / body / hands / legs / feet / back slots are ticked in Life gear above and are excluded from this picker.',
+    lifeSlotLabels:{ '身体':'Top', '腿部':'Bottom', '背部':'Cape', '头部':'Head', '手部':'Hands', '脚部':'Feet', '副手':'Off Hand' },
+    refineToggle:'Refined',
+    unownBtn:'Remove',
+    enhDone:'Done',
+    achievementsTip:'Achievement tiers are per-member persistent data: tick "all achievements in this tier completed" per member; they upload with the shared data. There are 6 tiers: Beginner gathering +2%, Novice XP +2%, Adept efficiency +2%, Veteran rare find +2%, Elite damage +2%, Champion enhance success +0.2%. Beginner/Adept/Champion affect the skilling-trial metrics; Elite is a combat buff (reserved for future combat trials). Values come from the game\'s achievementTierDetailMap.',
     guildHallTip:'Raises max members', buildersHallTip:'Boosts Guild Points', treasuryTip:'Boosts Guild Tokens',
     archivesTip:'Boosts Guild Experience', skillingCampTip:'Skilling trial slots +2/lv (cap = 20 + level×2)', combatCampTip:'Combat trial slots +2/lv (combat trials not simulated yet)',
     buffGathering:'Gathering Qty', buffGatheringTip:'Applies only to gathering skills (Milking/Foraging/Woodcutting) as double-drop chance. 0=none, 1~20, bonus = 19.5 + level×0.5 (%).',
@@ -394,18 +504,25 @@ const I18N = {
     levelUnit:'lv',
     skillLabels:['Milking','Foraging','Woodcutting','Cheesesmithing','Crafting','Tailoring','Cooking','Brewing','Alchemy','Enhancing'],
     equipLabels:['Main Hand','Off Hand','Head','Body','Hands','Legs','Feet','Necklace','Earring','Ring','Pouch','Back','Milking Tool','Foraging Tool','Woodcutting Tool','Cheesesmithing Tool','Crafting Tool','Tailoring Tool','Cooking Tool','Brewing Tool','Alchemy Tool','Enhancing Tool'],
-    equipShort:['MH','OH','Head','Body','Hands','Legs','Feet','Neck','Ear','Ring','Bag','Back','Milk','Forage','Wood','Cheese','Craft','Tailor','Cook','Brew','Alch','Enh'],
   }
 };
 function t(key) { return (I18N[state.lang] && I18N[state.lang][key]) || key; }
 function skillLabel(idx) { return I18N[state.lang].skillLabels[idx]; }
 function equipLabel(idx) { return I18N[state.lang].equipLabels[idx]; }
-function equipShortLabel(idx) { return I18N[state.lang].equipShort[idx]; }
+// 生活装备「拥有制」槽位的显示名（上衣 / 下装 / 披风）
+function lifeSlotLabel(slot) {
+  const map = (I18N[state.lang] && I18N[state.lang].lifeSlotLabels) || {};
+  return map[slot] || equipLabel(EQUIP_TYPES.indexOf(slot)) || slot;
+}
 
 // === Constants ===
 const SKILL_KEYS = ['milking','foraging','woodcutting','cheesesmithing','crafting','tailoring','cooking','brewing','alchemy','enhancing'];
 const EQUIP_TYPES = ['主手','副手','头部','身体','手部','腿部','脚部','项链','耳环','戒指','袋子','背部','挤奶工具','采摘工具','伐木工具','奶酪锻造工具','制作工具','缝纫工具','烹饪工具','冲泡工具','炼金工具','强化工具'];
 const TOOL_SKILL_MAP = {'挤奶工具':'milking','采摘工具':'foraging','伐木工具':'woodcutting','奶酪锻造工具':'cheesesmithing','制作工具':'crafting','缝纫工具':'tailoring','烹饪工具':'cooking','冲泡工具':'brewing','炼金工具':'alchemy','强化工具':'enhancing'};
+// 装备分三区：「生活装备」（纯生活件，勾选制）、「生活 · 战斗两用」（一槽一件，配装制）、
+// 「战斗装备 + 生活工具」（一槽一件，配装制）。后两区都走同一个 openEquipPicker 选择器。
+const TOOL_SLOTS = EQUIP_TYPES.filter(function(s){ return s.indexOf('工具') >= 0; });
+const EQUIP_MAX_ENHANCE = 20;
 const ITEM_LOCATION_TO_SLOT = {'/item_locations/main_hand':'主手','/item_locations/two_hand':'主手','/item_locations/off_hand':'副手','/item_locations/head':'头部','/item_locations/body':'身体','/item_locations/hands':'手部','/item_locations/legs':'腿部','/item_locations/feet':'脚部','/item_locations/neck':'项链','/item_locations/earrings':'耳环','/item_locations/ring':'戒指','/item_locations/pouch':'袋子','/item_locations/back':'背部','/item_locations/milking_tool':'挤奶工具','/item_locations/foraging_tool':'采摘工具','/item_locations/woodcutting_tool':'伐木工具','/item_locations/cheesesmithing_tool':'奶酪锻造工具','/item_locations/crafting_tool':'制作工具','/item_locations/tailoring_tool':'缝纫工具','/item_locations/cooking_tool':'烹饪工具','/item_locations/brewing_tool':'冲泡工具','/item_locations/alchemy_tool':'炼金工具','/item_locations/enhancing_tool':'强化工具'};
 const GATHERING_SKILL_IDS = new Set(['milking','foraging','woodcutting']);
 const PRODUCTION_SKILL_IDS = new Set(['cheesesmithing','crafting','tailoring','cooking','brewing','alchemy']);
@@ -425,6 +542,12 @@ const BASE_ACTION_SEC = 10, SUCCESS_BASE = 0.80, SUCCESS_BELOW = 0.01, SUCCESS_A
 const BASE_TOTAL_PT = 40000, PT_GROWTH = 4000, MAX_PASS_GUARD = 10000, NUM_TRIALS = 4;
 
 // __EQUIP_ICONS_PLACEHOLDER__
+
+// __LIFE_EQUIP_PLACEHOLDER__
+
+// 战斗装备（配装制 · 一槽一件）= 全部装备槽 − 生活工具 − 两用槽（项链/耳环/戒指/袋子 有自己的分区）。
+// 顺序按需求写死：主手 / 副手 / 头部 / 身体 / 腿部 / 手部 / 脚部 / 背部（腿部与手部相对 EQUIP_TYPES 互换）。
+const COMBAT_EQUIP_SLOTS = ['主手','副手','头部','身体','腿部','手部','脚部','背部'];
 
 // === State ===
 // 说明：神龛等级是「个人属性」，直接挂在每个成员身上（member.shrines），不再有全局输入。
@@ -457,88 +580,233 @@ function getEnhancementBonusPercent(enhLevel, slot) {
   return ACCESSORY_ENH_SLOTS.has(String(slot)) ? clamped * 5 : clamped;
 }
 
-// 把按 stat key 累加的装备 totals，分配到按技能聚合的加成结构 b[skillId]。
-function applyEquipStatTotals(b, totals) {
+// 单件装备的原始加成（statKey → 数值）。与旧逻辑等价，只是把「逐件算」和「并入某技能」拆开：
+// 1) 命中固定基础加成表 → 按真实装备身份精确算（0 级基础值 × 强化系数 × 物品倍率）
+// 2) 未命中 → 先试生活工具 前缀_后缀 精确加成
+// 3) 仍未命中 → 按槽位类型的近似公式（工具给单技能、防具给全技能微加成）
+function itemStatTotals(slot, iconId, enhance) {
+  const totals = {};
+  const L = Number(enhance) || 0;
+  const idStr = String(iconId || '');
+  const effectiveName = idStr.endsWith('_refined') ? idStr.slice(0, -'_refined'.length) : idStr;
+  const cfg = idStr ? EQUIPMENT_BASE_BONUSES['/items/' + effectiveName] : null;
+  const isBack = (slot === '背部');
+  // 精炼（★）倍率：官方 2025/8/20 调整 —— 精炼装备 +8%，背部（披风）装备 +16%；
+  // 未精炼装备没有任何倍率加成（此前误把 ×1.16 也套在非精炼披风上）。
+  const itemMult = idStr.endsWith('_refined') ? (isBack ? 1.16 : 1.08) : 1;
+  if (cfg && cfg.base) {
+    const enhPct = getEnhancementBonusPercent(L, slot);
+    for (const [k, baseVal] of Object.entries(cfg.base)) {
+      const v = Number(baseVal) * (1 + enhPct) * itemMult;
+      if (!Number.isFinite(v) || v === 0) continue;
+      totals[k] = (totals[k] || 0) + v;
+    }
+    return totals;
+  }
+  const toolRaw = idStr.replace('/items/', '');
+  const toolRefined = toolRaw.endsWith('_refined');
+  const toolName = toolRefined ? toolRaw.slice(0, -'_refined'.length) : toolRaw;
+  const uidx = toolName.lastIndexOf('_');
+  if (uidx > 0) {
+    const prefix = toolName.slice(0, uidx);
+    const suffix = toolName.slice(uidx + 1);
+    const basePct = suffix === 'enhancer' ? (ENHANCER_PREFIX_BONUS[prefix]||0) : (TOOL_PREFIX_BONUS[prefix]||0);
+    const statKey = TOOL_SUFFIX_SKILL[suffix];
+    if (basePct && statKey) {
+      const enhPct = getEnhancementBonusPercent(L, slot);
+      totals[statKey] = (totals[statKey] || 0) + basePct * (1 + enhPct) * itemMult;
+      return totals;
+    }
+  }
+  const skill = TOOL_SKILL_MAP[slot];
+  if (skill) {
+    totals[skill+'Speed'] = L*0.025;
+    totals[skill+'Efficiency'] = L*0.015;
+    totals[skill+'Success'] = L*0.005;
+    totals[skill+'Gathering'] = L*0.01;
+    totals[skill+'Level'] = L*0.5;
+  } else {
+    // 袋子（pouch）在游戏里只提供食物 / 饮料槽位与生命 / 法力上限，对生活技能没有任何加成 —— 直接返回空。
+    if (slot === '袋子') return totals;
+    totals['skillingSpeed'] = L*0.002;
+    totals['skillingEfficiency'] = L*0.001;
+    totals['skillingLevel'] = L*0.1;
+  }
+  return totals;
+}
+
+// 把单件装备的加成并入「某一个技能」的加成结构（等价于旧 applyEquipStatTotals 里对该技能的那部分）
+function foldStatTotalsForSkill(out, totals, skillId) {
   for (const k in totals) {
     const v = totals[k];
     if (!Number.isFinite(v) || v === 0) continue;
-    if (k === 'skillingSpeed') { for (const s of SKILL_KEYS) b[s].speedBonus += v; continue; }
-    if (k === 'skillingEfficiency') { for (const s of SKILL_KEYS) b[s].efficiencyBonus += v; continue; }
-    if (k === 'gatheringQuantity') { for (const s of SKILL_KEYS) if (GATHERING_SKILL_IDS.has(s)) b[s].gatheringBonus += v; continue; }
-    // {skillId}Speed / Efficiency / Success / Level
-    for (const s of SKILL_KEYS) {
-      if (k.startsWith(s)) {
-        const suffix = k.slice(s.length);
-        if (suffix === 'Speed') b[s].speedBonus += v;
-        else if (suffix === 'Efficiency') b[s].efficiencyBonus += v;
-        else if (suffix === 'Success') b[s].successBonus += v;
-        else if (suffix === 'Level') b[s].skillLevelBonus += v;
-        break;
-      }
-    }
+    if (k === 'skillingSpeed') { out.speedBonus += v; continue; }
+    if (k === 'skillingEfficiency') { out.efficiencyBonus += v; continue; }
+    if (k === 'skillingLevel') { out.skillLevelBonus += v; continue; }
+    if (k === 'gatheringQuantity') { if (GATHERING_SKILL_IDS.has(skillId)) out.gatheringBonus += v; continue; }
+    if (k.indexOf(skillId) !== 0) continue;   // {skillId}Speed / Efficiency / Success / Level / Gathering
+    const suffix = k.slice(skillId.length);
+    if (suffix === 'Speed') out.speedBonus += v;
+    else if (suffix === 'Efficiency') out.efficiencyBonus += v;
+    else if (suffix === 'Success') out.successBonus += v;
+    else if (suffix === 'Level') out.skillLevelBonus += v;
+    else if (suffix === 'Gathering') out.gatheringBonus += v;
   }
 }
+function foldItemForSkill(out, slot, iconId, enhance, skillId) {
+  foldStatTotalsForSkill(out, itemStatTotals(slot, iconId, enhance), skillId);
+}
+function emptySkillBonus() { return {speedBonus:0,efficiencyBonus:0,successBonus:0,gatheringBonus:0,skillLevelBonus:0}; }
+function cloneSkillBonus(b) { return {speedBonus:b.speedBonus,efficiencyBonus:b.efficiencyBonus,successBonus:b.successBonus,gatheringBonus:b.gatheringBonus,skillLevelBonus:b.skillLevelBonus}; }
 
-function computeMemberBonuses(equipment) {
-  const b = {};
-  for (const k of SKILL_KEYS) b[k] = {speedBonus:0,efficiencyBonus:0,successBonus:0,gatheringBonus:0,skillLevelBonus:0};
-  if (!equipment) return b;
-  for (const [slot, eq] of Object.entries(equipment)) {
-    if (!eq || (!eq.iconId && !(eq.enhance > 0))) continue;
-    const L = eq.enhance || 0;
-    const iconId = eq.iconId || '';
-    // 命中固定基础加成表：按真实装备身份精确计算（0 级基础值 × 强化系数 × 物品倍率）
-    const effectiveName = iconId.endsWith('_refined') ? iconId.slice(0, -'_refined'.length) : iconId;
-    const cfg = EQUIPMENT_BASE_BONUSES['/items/' + effectiveName];
-    if (cfg && cfg.base) {
-      const enhPct = getEnhancementBonusPercent(L, slot);
-      const isBack = (slot === '背部');
-      const itemMult = (iconId.endsWith('_refined') ? 1.08 : 1) * (isBack ? 1.16 : 1);
-      const totals = {};
-      for (const [k, baseVal] of Object.entries(cfg.base)) {
-        const v = Number(baseVal) * (1 + enhPct) * itemMult;
-        if (!Number.isFinite(v) || v === 0) continue;
-        totals[k] = (totals[k] || 0) + v;
-      }
-      applyEquipStatTotals(b, totals);
-      continue;
+// 装备择优用的标量：按该技能的实际产出速度比较（与推演同口径：等级 × 效率 × 采集 / 动作时间 × 成功率）
+function equipChoiceScore(b, baseLevel) {
+  const effLevel = Math.max(0, baseLevel + (b.skillLevelBonus||0));
+  const actionSeconds = BASE_ACTION_SEC / Math.max(0.05, 1+(b.speedBonus||0));
+  if (!(actionSeconds > 0)) return 0;
+  const workP = Math.max(0, Math.floor(effLevel * (1+(b.efficiencyBonus||0))));
+  const dblP = Math.max(0, Math.min(1, b.gatheringBonus||0));
+  return (workP*(1+dblP))/actionSeconds * successRate(effLevel, START_LV, b.successBonus||0);
+}
+
+// === 装备「拥有制」槽位 ===
+// OWNED_SLOTS 里的每个槽位都以「拥有集合」记录：person.ownedEquip[slot][iconId] = 强化等级。
+// iconId 可以是家族的基础款，也可以是基础款 + '_refined'（★ 精炼款）；同一家族两者互斥（只能穿一件）。
+// 推演时按「当前试炼技能」自动取该槽位收益最高的一件（同一槽位只能穿一件 → 是择优而不是累加）。
+function ownedEquipOf(person, slot) {
+  const o = person && person.ownedEquip && person.ownedEquip[slot];
+  return (o && typeof o === 'object') ? o : null;
+}
+function clampEnhance(v) { return Math.max(0, Math.min(EQUIP_MAX_ENHANCE, Math.floor(Number(v) || 0))); }
+function isOwnedSlot(slot) {
+  return (typeof OWNED_SLOTS !== 'undefined') && OWNED_SLOTS.indexOf(slot) >= 0;
+}
+// 该槽位可勾选的装备家族（生活槽位只列生活件；两用槽位整槽列出）
+function equipFamilies(slot) {
+  return (typeof EQUIP_FAMILIES !== 'undefined' && EQUIP_FAMILIES[slot]) ? EQUIP_FAMILIES[slot] : [];
+}
+function familyOf(slot, baseId) {
+  const fams = equipFamilies(slot);
+  for (let i = 0; i < fams.length; i++) if (fams[i].id === baseId) return fams[i];
+  return null;
+}
+function iconBaseId(iconId) {
+  const s = String(iconId || '');
+  return s.endsWith('_refined') ? s.slice(0, -'_refined'.length) : s;
+}
+function isOwnedFamily(slot, iconId) {
+  const base = iconBaseId(iconId);
+  const fams = equipFamilies(slot);
+  for (let i = 0; i < fams.length; i++) if (fams[i].id === base) return true;
+  return false;
+}
+// 家族显示名（英文界面回落到 iconId）
+function familyName(baseId, zhName) {
+  if (state.lang !== 'en' && zhName) return zhName;
+  return String(baseId).replace(/_/g, ' ');
+}
+// 读取某家族当前的拥有状态：{enh, refined} 或 null
+function ownedEntry(person, slot, baseId) {
+  const owned = ownedEquipOf(person, slot);
+  if (!owned) return null;
+  if (owned[baseId] != null) return { enh: clampEnhance(owned[baseId]), refined: false };
+  const rk = baseId + '_refined';
+  if (owned[rk] != null) return { enh: clampEnhance(owned[rk]), refined: true };
+  return null;
+}
+// 写入某家族（先清掉同家族的另一个键 → 普通款 / 精炼款互斥）
+function setOwnedEntry(person, slot, baseId, enh, refined) {
+  if (!person.ownedEquip || typeof person.ownedEquip !== 'object') person.ownedEquip = {};
+  if (!person.ownedEquip[slot] || typeof person.ownedEquip[slot] !== 'object') person.ownedEquip[slot] = {};
+  const owned = person.ownedEquip[slot];
+  const rk = baseId + '_refined';
+  delete owned[baseId];
+  delete owned[rk];
+  owned[refined ? rk : baseId] = clampEnhance(enh);
+  person._ts = Date.now();
+}
+function clearOwnedEntry(person, slot, baseId) {
+  const owned = ownedEquipOf(person, slot);
+  if (!owned) return;
+  delete owned[baseId];
+  delete owned[baseId + '_refined'];
+  person._ts = Date.now();
+}
+// 该槽位里「对这个技能收益最高」的一件（不含 cur 之外的其它槽位加成，用于同槽位横向比较）
+function bestOwnedForSkill(person, slot, skillId, baseLevel, cur) {
+  const owned = ownedEquipOf(person, slot);
+  if (!owned) return null;
+  let best = null, bestScore = -1;
+  for (const iconId in owned) {
+    if (!isOwnedFamily(slot, iconId)) continue;
+    const enh = clampEnhance(owned[iconId]);
+    const cand = cloneSkillBonus(cur);
+    foldItemForSkill(cand, slot, iconId, enh, skillId);
+    const sc = equipChoiceScore(cand, baseLevel);
+    if (sc > bestScore) { bestScore = sc; best = { iconId: iconId, enhance: enh }; }
+  }
+  return best;
+}
+// 单个技能下的装备总加成：拥有制槽位（按该技能择优）+ 配装槽（一槽一件）
+function computeBonusForSkill(person, skillId, baseLevel) {
+  const out = emptySkillBonus();
+  if (!person) return out;
+  for (const slot of EQUIP_TYPES) {
+    if (isOwnedSlot(slot)) {
+      const best = bestOwnedForSkill(person, slot, skillId, baseLevel, out);
+      if (best) { foldItemForSkill(out, slot, best.iconId, best.enhance, skillId); continue; }
+      // 拥有集合为空 → 回落到配装槽（兼容旧数据：原来按「一槽一件」登记在这里）
     }
-    // 未命中固定表：先试生活工具 前缀_后缀 精确加成；再退回到按槽位类型的近似公式（不回归）
-    const toolRaw = String(iconId).replace('/items/','');
-    const toolRefined = toolRaw.endsWith('_refined');
-    const toolName = toolRefined ? toolRaw.slice(0, -'_refined'.length) : toolRaw;
-    const uidx = toolName.lastIndexOf('_');
-    if (uidx > 0) {
-      const prefix = toolName.slice(0, uidx);
-      const suffix = toolName.slice(uidx + 1);
-      const basePct = suffix === 'enhancer' ? (ENHANCER_PREFIX_BONUS[prefix]||0) : (TOOL_PREFIX_BONUS[prefix]||0);
-      const statKey = TOOL_SUFFIX_SKILL[suffix];
-      if (basePct && statKey) {
-        const enhPct = getEnhancementBonusPercent(L, slot);
-        const isBack = (slot === '背部');
-        const itemMult = (toolRefined ? 1.08 : 1) * (isBack ? 1.16 : 1);
-        const v = basePct * (1 + enhPct) * itemMult;
-        const targetSkill = statKey.replace(/Speed$|Efficiency$|Success$/, '');
-        const field = statKey.endsWith('Speed') ? 'speedBonus' : statKey.endsWith('Efficiency') ? 'efficiencyBonus' : 'successBonus';
-        b[targetSkill][field] += v;
-        continue;
-      }
+    const eq = person.equipment && person.equipment[slot];
+    if (!eq) continue;
+    if (!eq.iconId && !(eq.enhance > 0)) continue;
+    foldItemForSkill(out, slot, eq.iconId, eq.enhance, skillId);
+  }
+  return out;
+}
+// 旧数据迁移（幂等）：
+// ① 勾选制槽位（身体/腿部/背部/头部/手部/脚部/副手）原来按「一槽一件」记在 equipment 里 →
+//    属于该槽位家族（生活件）的搬进 ownedEquip；战斗件（战斗护甲 / 头盔 / 战斗披风 等）留在配装槽。
+// ② 两用槽（项链/耳环/戒指/袋子）v6.6 曾按「整槽勾选」记进 ownedEquip → 现在改回「一槽一件」的配装制，
+//    取其中强化最高的一件搬回 equipment，然后清掉该槽的 ownedEquip。
+function normalizeMemberEquip(p) {
+  if (!p) return p;
+  if (!p.ownedEquip || typeof p.ownedEquip !== 'object') p.ownedEquip = {};
+  if (!p.equipment || typeof p.equipment !== 'object') p.equipment = {};
+  for (const slot of OWNED_SLOTS) {
+    if (!p.ownedEquip[slot] || typeof p.ownedEquip[slot] !== 'object') p.ownedEquip[slot] = {};
+    const owned = p.ownedEquip[slot];
+    const old = p.equipment[slot];
+    if (old && old.iconId && isOwnedFamily(slot, old.iconId) && owned[old.iconId] == null) {
+      owned[old.iconId] = clampEnhance(old.enhance);
+      delete p.equipment[slot];
     }
-    // 槽位类型近似公式（工具给单技能、防具给全技能微加成）
-    const skill = TOOL_SKILL_MAP[slot];
-    if (skill) {
-      b[skill].speedBonus += L*0.025;
-      b[skill].efficiencyBonus += L*0.015;
-      b[skill].successBonus += L*0.005;
-      b[skill].gatheringBonus += L*0.01;
-      b[skill].skillLevelBonus += L*0.5;
-    } else {
-      for (const s of SKILL_KEYS) {
-        b[s].speedBonus += L*0.002; b[s].efficiencyBonus += L*0.001; b[s].skillLevelBonus += L*0.1;
+    for (const k of Object.keys(owned)) {
+      if (!isOwnedFamily(slot, k)) { delete owned[k]; continue; }   // 剔除非本槽位家族的脏键
+      owned[k] = clampEnhance(owned[k]);
+      if (k.endsWith('_refined')) {                                  // 普通款与精炼款同时存在 → 保留精炼款
+        const base = k.slice(0, -'_refined'.length);
+        if (owned[base] != null) delete owned[base];
       }
     }
   }
-  return b;
+  for (const slot of HYBRID_SLOTS) {
+    const owned = ownedEquipOf(p, slot);
+    if (owned) {
+      let bestKey = null, bestEnh = -1;
+      for (const k of Object.keys(owned)) {
+        const e = clampEnhance(owned[k]);
+        if (e > bestEnh) { bestEnh = e; bestKey = k; }
+      }
+      const cur = p.equipment[slot];
+      if (bestKey && !(cur && cur.iconId)) {
+        p.equipment[slot] = { iconId: bestKey, enhance: bestEnh };
+        p._ts = Date.now();
+      }
+    }
+    delete p.ownedEquip[slot];
+  }
+  return p;
 }
 
 // === 成就 / 房屋 / 公会 加成（迁移自 Chen19970809/MWI_Trial_Calculator）===
@@ -579,33 +847,33 @@ function accumulateActionTypeBuffs(dict, skillId) {
   return out;
 }
 
-// 成就档完成状态 → 某技能的档位 BUFF。仅 Beginner/Adept tier，且该 tier 下所有成就都完成才触发。
+// 成就档完成状态 → 某技能的档位 BUFF。完整 6 档（初学者/新手/熟练者/老手/精英/冠军），
+// 数值与「作用技能」取自游戏 achievementTierDetailMap，且该档全部成就完成才触发。
+// 战斗向增益（精英=伤害+2%）写入 damageBonus 等字段，供后续战斗试炼取用（当前生活推演不使用）。
 function applyAchievementTierBuffs(out, achievementsValue, actionTypeHrid) {
   if (!achievementsValue || typeof achievementsValue !== 'object' || Array.isArray(achievementsValue)) return;
   const tierDetailMap = EMBEDDED_CLIENT_DATA && EMBEDDED_CLIENT_DATA.achievementTierDetailMap;
   if (!tierDetailMap) return;
-  for (const tierHrid of ['/achievement_tiers/beginner', '/achievement_tiers/adept']) {
-    if (achievementsValue[tierHrid] !== true) continue;
-    const tierDetail = tierDetailMap[tierHrid];
-    if (!tierDetail || !tierDetail.buff || !tierDetail.usableInActionTypeMap || !tierDetail.usableInActionTypeMap[actionTypeHrid]) continue;
-    const b = tierDetail.buff;
-    const amt = readBuffAmount(b);
-    const t = b.typeHrid;
-    if      (t === '/buff_types/efficiency') out.efficiencyBonus += amt;
-    else if (t === '/buff_types/action_speed' || t === '/buff_types/speed') out.speedBonus += amt;
-    else if (t === '/buff_types/success_rate') out.successBonus += amt;
-    else if (t === '/buff_types/gathering') out.gatheringBonus += amt;
-    else if (t.endsWith('_level')) out.skillLevelBonus += amt;
+  const skillId = actionTypeHrid ? actionTypeHrid.replace('/action_types/', '') : null;
+  for (const tier of achievementTiersList()) {
+    if (achievementsValue[tier.hrid] !== true) continue;
+    const detail = tierDetailMap[tier.hrid];
+    if (!detail || !detail.buff) continue;
+    if (detail.usableInActionTypeMap && !detail.usableInActionTypeMap[actionTypeHrid]) continue;
+    const b = detail.buff;
+    const type = String(b.typeHrid || '').replace('/buff_types/', '');
+    addBonusByType(out, type, readBuffAmount(b), skillId);
   }
 }
 
-// 把原始 achievements 布尔表压缩成两档完成状态 {tier: bool}。
+// 把原始 achievements 布尔表压缩成 6 档完成状态 {tierHrid: bool}。
 function computeAchievementsValue(achievements) {
   if (!achievements || typeof achievements !== 'object' || Array.isArray(achievements)) return null;
   const detailMap = EMBEDDED_CLIENT_DATA && EMBEDDED_CLIENT_DATA.achievementDetailMap;
   if (!detailMap) return null;
   const val = {}; let any = false;
-  for (const tierHrid of ['/achievement_tiers/beginner', '/achievement_tiers/adept']) {
+  for (const tier of achievementTiersList()) {
+    const tierHrid = tier.hrid;
     let total = 0, done = 0;
     for (const [achHrid, achDetail] of Object.entries(detailMap)) {
       if (!achDetail || achDetail.tierHrid !== tierHrid) continue;
@@ -618,11 +886,40 @@ function computeAchievementsValue(achievements) {
   return any ? val : null;
 }
 
+// 把导出的成就信息统一成 {achievementHrid: bool} 布尔表。
+// 共享资料里可能是数组形式（characterAchievements: [{achievementHrid, isCompleted, ...}]），
+// 也可能是对象/Map 形式（{achHrid: true}）或包一层 data。
+function normalizeAchievementsMap(raw) {
+  if (!raw) return null;
+  if (Array.isArray(raw)) {
+    const m = {};
+    for (const a of raw) {
+      if (!a || typeof a !== 'object') continue;
+      const hrid = a.achievementHrid || a.hrid;
+      if (!hrid) continue;
+      m[hrid] = (a.isCompleted !== false && a.isCompleted !== 0 && a.isCompleted !== undefined);
+    }
+    return m;
+  }
+  if (typeof raw === 'object') {
+    if (raw.data && typeof raw.data === 'object' && !Array.isArray(raw.data)) return raw.data;
+    return raw;
+  }
+  return null;
+}
+
 // 从 person.achievementsValue / achievementActionTypeBuffsDict / achievements 提取成就对某技能的加成。
+// v6.1 起：成员级可编辑的成就档位（person.achievements，个人持久化数据）优先于导入时的原始 profile 字段。
 function extractAchievementBonuses(person, skillId) {
   const out = { speedBonus:0, efficiencyBonus:0, successBonus:0, gatheringBonus:0, skillLevelBonus:0 };
   if (!person) return out;
   const actionTypeHrid = '/action_types/' + skillId;
+  const memberVal = memberAchievementValue(person);
+  if (memberVal) {
+    applyAchievementTierBuffs(out, memberVal, actionTypeHrid);
+    // 勾选值为权威：全空且 profile 也没带显式 buff 字典时即可返回
+    if (Object.keys(memberVal).length > 0 || !person.achievementActionTypeBuffsDict) return out;
+  }
   if (person.achievementsValue) {
     applyAchievementTierBuffs(out, person.achievementsValue, actionTypeHrid);
     return out;
@@ -644,14 +941,14 @@ function extractAchievementBonuses(person, skillId) {
       return out;
     }
   }
-  if (EMBEDDED_CLIENT_DATA && EMBEDDED_CLIENT_DATA.achievementDetailMap && EMBEDDED_CLIENT_DATA.achievementTierDetailMap && person.achievements && typeof person.achievements === 'object' && !Array.isArray(person.achievements)) {
-    applyAchievementTierBuffs(out, computeAchievementsValue(person.achievements), actionTypeHrid);
+  const rawAch = normalizeAchievementsMap(person.achievements || person.characterAchievements);
+  if (EMBEDDED_CLIENT_DATA && EMBEDDED_CLIENT_DATA.achievementDetailMap && EMBEDDED_CLIENT_DATA.achievementTierDetailMap && rawAch) {
+    applyAchievementTierBuffs(out, computeAchievementsValue(rawAch), actionTypeHrid);
     return out;
   }
-  let dict = null;
-  if (person.achievements && typeof person.achievements === 'object' && !Array.isArray(person.achievements)) {
-    const ach = person.achievements.data && typeof person.achievements.data === 'object' ? person.achievements.data : person.achievements;
-    dict = ach.achievementActionTypeBuffsDict || ach.actionTypeBuffsDict || ach;
+  let dict = rawAch;
+  if (dict && typeof dict === 'object' && !Array.isArray(dict)) {
+    dict = dict.achievementActionTypeBuffsDict || dict.actionTypeBuffsDict || dict;
   }
   if (!dict || typeof dict !== 'object' || Array.isArray(dict)) return out;
   let buffs = dict[actionTypeHrid];
@@ -680,10 +977,58 @@ function computeBuffAtLevel(b, level) {
   return level * (Number(b.flatBoostLevelBonus) || 0);
 }
 
-// 从 person.houseActionTypeBuffsDict / houseRoomLevels 计算房屋加成。
+// === 房屋房间（17 个：10 生活 + 7 战斗，成员级个人持久化数据）===
+function houseRoomDefsList() {
+  return (typeof HOUSE_ROOM_DEFS !== 'undefined' && HOUSE_ROOM_DEFS.length) ? HOUSE_ROOM_DEFS : [];
+}
+function houseRoomDef(key) {
+  for (const d of houseRoomDefsList()) if (d.key === key) return d;
+  return null;
+}
+// 读取成员某个房屋房间的等级：member.houseRooms（可直接编辑/上传）优先，
+// 兼容导入 profile 的 characterHouseRoomMap / houseRoomLevels。
+function houseRoomLevel(person, key) {
+  if (!person) return 0;
+  const cap = (typeof HOUSE_ROOM_MAX_LEVEL !== 'undefined') ? HOUSE_ROOM_MAX_LEVEL : 20;
+  const clamp = (v) => Math.max(0, Math.min(cap, Math.floor(Number(v) || 0)));
+  const edited = person.houseRooms && person.houseRooms[key];
+  if (edited != null && edited !== '') return clamp(edited);
+  const legacy = person.characterHouseRoomMap || person.houseRoomLevels;
+  if (legacy && typeof legacy === 'object') {
+    const raw = (legacy['/house_rooms/' + key] != null) ? legacy['/house_rooms/' + key] : legacy[key];
+    if (typeof raw === 'number') return clamp(raw);
+    if (raw && typeof raw === 'object') {
+      const lv = (raw.level != null) ? raw.level : ((raw.roomLevel != null) ? raw.roomLevel : raw.houseRoomLevel);
+      if (lv != null) return clamp(lv);
+    }
+  }
+  return 0;
+}
+// 导入 profile 的房屋等级 → 成员可编辑的 houseRooms（个人持久化数据）
+function materializeMemberHouseRooms(profile) {
+  const out = {};
+  for (const d of houseRoomDefsList()) out[d.key] = 0;
+  if (!profile) return out;
+  const src = { characterHouseRoomMap: profile.characterHouseRoomMap, houseRoomLevels: profile.houseRoomLevels };
+  for (const d of houseRoomDefsList()) out[d.key] = houseRoomLevel(src, d.key);
+  return out;
+}
+// 从 member.houseRooms 计算房屋加成（生活房间计入试炼推演；战斗房间由 computeCombatBonuses 聚合）。
+// 兼容旧的 houseActionTypeBuffsDict / houseRoomLevels 字段。
 function extractHouseBuffBonuses(person, skillId) {
   const out = { speedBonus:0, efficiencyBonus:0, successBonus:0, gatheringBonus:0, skillLevelBonus:0 };
   if (!person) return out;
+  // 1) 成员级可编辑的 houseRooms（权威值）
+  if (person.houseRooms && typeof person.houseRooms === 'object') {
+    for (const d of houseRoomDefsList()) {
+      if (!d.affectsTrial) continue;
+      if (d.skill && d.skill !== skillId) continue;
+      const lv = houseRoomLevel(person, d.key);
+      if (lv <= 0) continue;
+      for (const b of (d.actionBuffs || [])) addBonusByType(out, b.type, lv * (Number(b.perLevel) || 0), skillId);
+    }
+    return out;
+  }
   if (person.houseActionTypeBuffsDict && Object.keys(person.houseActionTypeBuffsDict).length > 0) {
     return accumulateActionTypeBuffs(person.houseActionTypeBuffsDict, skillId);
   }
@@ -763,15 +1108,40 @@ function applyTrialCaps() {
   const cap = skillingTrialCap();
   for (const cfg of state.trials) { cfg.max = cap; }
 }
-// 读取成员「个人」神龛增益等级：member.shrines（可直接编辑/上传），
-// 兼容导入数据里的 guildBuffLevelMap（键为 /guild_buffs/<shrine>_skilling）。
-function memberShrineLevel(person, shrineKey) {
+// === 个人神龛（5 座 × 生活/战斗 = 10 个槽位，成员级个人持久化数据）===
+// 生活变体计入生活试炼推演（仅 力量=效率、节奏=动作速度）；
+// 战斗变体为后续战斗试炼预留，不并入 combined（由 computeCombatBonuses 聚合）。
+function shrineSlotsList() {
+  if (typeof GUILD_SHRINE_SLOTS !== 'undefined' && GUILD_SHRINE_SLOTS.length) return GUILD_SHRINE_SLOTS;
+  const out = [];
+  for (const d of shrineDefsList()) {
+    for (const v of (d.variants || [])) out.push(Object.assign({ shrine:d.key, icon:d.icon }, v));
+  }
+  return out;
+}
+function shrineSlotDef(slot) {
+  for (const s of shrineSlotsList()) if (s.slot === slot) return s;
+  return null;
+}
+// 读取成员某个神龛槽位的等级（slot = <shrine>_skilling / <shrine>_combat）：
+// member.shrines（可直接编辑/上传）优先；再兼容旧 <shrine> 单键与导入的 guildBuffLevelMap。
+function memberShrineLevel(person, slot) {
   if (!person) return 0;
-  const edited = person.shrines && person.shrines[shrineKey];
-  if (edited != null && edited !== '') return Math.max(0, Math.floor(Number(edited) || 0));
+  const shrines = person.shrines;
+  if (shrines && typeof shrines === 'object') {
+    const v = shrines[slot];
+    if (v != null && v !== '') return Math.max(0, Math.floor(Number(v) || 0));
+    if (slot.slice(-9) === '_skilling') {   // v6.1 及更早：生活档位存成 <shrine> 单键
+      const legacy = shrines[slot.slice(0, -9)];
+      if (legacy != null && legacy !== '') return Math.max(0, Math.floor(Number(legacy) || 0));
+    }
+  }
   const map = person.guildBuffLevels;
   if (map && typeof map === 'object') {
-    const needles = ['/guild_buffs/' + shrineKey + '_skilling', 'guild_buffs/' + shrineKey + '_skilling', shrineKey + '_skilling', '/guild_buffs/' + shrineKey, shrineKey];
+    const def = shrineSlotDef(slot);
+    const needles = [];
+    if (def && def.buffHrid) needles.push(def.buffHrid);
+    needles.push('/guild_buffs/' + slot, slot);
     for (const key of needles) {
       if (map[key] != null) return Math.max(0, Math.floor(Number(map[key]) || 0));
       if (map['/' + key] != null) return Math.max(0, Math.floor(Number(map['/' + key]) || 0));
@@ -779,21 +1149,47 @@ function memberShrineLevel(person, shrineKey) {
   }
   return 0;
 }
-// 公会神龛：对齐游戏 5 神龛（力量/节奏/精神/稀有/学者），全部为「个人增益」，逐人读取。
-// 仅 force(效率 +0.5%/级)、tempo(动作速度 +0.5%/级) 影响试炼推演指标；
-// spirit(精华掉率)/rarity(稀有掉率)/scholar(智慧经验) 不影响层数，故不并入 combined。
+// 生活试炼推演用：只应用「影响试炼」的神龛变体（力量=效率 +0.5%/级、节奏=动作速度 +0.5%/级）。
 function applyGuildShrine(combined, person) {
-  const out = { speedBonus:0, efficiencyBonus:0 };
-  const buffs = (typeof GUILD_SHRINE_SKILL_BUFFS !== 'undefined') ? GUILD_SHRINE_SKILL_BUFFS : {};
-  const defs = (typeof GUILD_SHRINE_DEFS !== 'undefined' && GUILD_SHRINE_DEFS.length) ? GUILD_SHRINE_DEFS
-    : GUILD_SHRINE_KEYS.map(k => ({ key:k, type:(buffs[k]||{}).type, flatPerLevel:(buffs[k]||{}).flatPerLevel, affectsTrial:(k==='force'||k==='tempo') }));
-  for (const def of defs) {
-    if (!def || !def.affectsTrial) continue;
-    const lv = Math.max(0, Math.min(GUILD_SHRINE_MAX_LEVEL, memberShrineLevel(person, def.key)));
+  const out = { speedBonus:0, efficiencyBonus:0, successBonus:0, gatheringBonus:0, skillLevelBonus:0, damageBonus:0 };
+  for (const s of shrineSlotsList()) {
+    if (!s.affectsTrial) continue;
+    const lv = Math.max(0, Math.min(GUILD_SHRINE_MAX_LEVEL, memberShrineLevel(person, s.slot)));
     if (lv <= 0) continue;
-    const amt = lv * (def.flatPerLevel || 0);
-    if (def.type === 'efficiency') { combined.efficiencyBonus += amt; out.efficiencyBonus += amt; }
-    else if (def.type === 'action_speed') { combined.speedBonus += amt; out.speedBonus += amt; }
+    for (const b of (s.buffs || [])) addBonusByType(out, b.type, lv * (Number(b.perLevel) || 0), null);
+  }
+  combined.speedBonus = (combined.speedBonus||0) + out.speedBonus;
+  combined.efficiencyBonus = (combined.efficiencyBonus||0) + out.efficiencyBonus;
+  combined.successBonus = (combined.successBonus||0) + out.successBonus;
+  combined.gatheringBonus = (combined.gatheringBonus||0) + out.gatheringBonus;
+  combined.skillLevelBonus = (combined.skillLevelBonus||0) + out.skillLevelBonus;
+  return out;
+}
+// 战斗向加成聚合（战斗试炼暂未模拟）：把「战斗神龛 + 战斗房屋房间 + 战斗类公会建筑 + 精英成就」的
+// 伤害/攻速/施法速度/生命·法力上限等先算出来，供后续战斗试炼直接取用。
+function computeCombatBonuses(person) {
+  const out = { damageBonus:0, attackSpeedBonus:0, castSpeedBonus:0, maxHpBonus:0, maxMpBonus:0, rareFindBonus:0, skillLevelBonus:0 };
+  for (const s of shrineSlotsList()) {
+    if (!s.affectsCombat) continue;
+    const lv = Math.max(0, Math.min(GUILD_SHRINE_MAX_LEVEL, memberShrineLevel(person, s.slot)));
+    if (lv <= 0) continue;
+    for (const b of (s.buffs || [])) addBonusByType(out, b.type, lv * (Number(b.perLevel) || 0), null);
+  }
+  for (const d of houseRoomDefsList()) {
+    if (!d.affectsCombat) continue;
+    const lv = houseRoomLevel(person, d.key);
+    if (lv <= 0) continue;
+    for (const b of (d.actionBuffs || [])) addBonusByType(out, b.type, lv * (Number(b.perLevel) || 0), null);
+  }
+  for (const tier of achievementTiersList()) {
+    if (!tier.affectsCombat || !memberAchievementDone(person, tier.key)) continue;
+    for (const b of (tier.buffs || [])) addBonusByType(out, b.type, Number(b.perLevel) || 0, null);
+  }
+  const buildings = state.guildBuildings || {};
+  const combatKeys = (typeof GUILD_BUILDING_COMBAT_KEYS !== 'undefined') ? GUILD_BUILDING_COMBAT_KEYS : [];
+  for (const k of combatKeys) {
+    const lv = Math.max(0, Math.min(GUILD_BUILDING_MAX_LEVEL, Math.floor(Number(buildings[k]) || 0)));
+    if (lv > 0) out.skillLevelBonus += lv * GUILD_BUILDING_SKILL_PER_LEVEL;
   }
   return out;
 }
@@ -820,9 +1216,10 @@ function successRate(personLv, targetLv, successBonus) {
 }
 
 function computePersonSkillMetrics(person, skillIdx) {
-  const bonuses = computeMemberBonuses(person.equipment);
   const skillId = SKILL_KEYS[skillIdx];
-  const b = bonuses[skillId];
+  const baseLevel = Number(person.levels[skillIdx]||0);
+  // 装备：生活装备「拥有制」槽位（上衣/下装/披风）按本技能自动择优，其余配装槽按登记的单件
+  const b = computeBonusForSkill(person, skillId, baseLevel);
   // 手动输入的全局 buff：按技能分类叠加相应比例
   addGlobalBuffsToCombined(b, skillId);
   // 逐人加成：成就档 buff、房屋房间 buff（依赖导入 profile 中的对应字段）
@@ -833,7 +1230,6 @@ function computePersonSkillMetrics(person, skillIdx) {
   // 公会建筑（有效等级）/ 公会神龛（效率/速度），本地输入项
   applyGuildBuilding(b, skillId);
   applyGuildShrine(b, person);
-  const baseLevel = Number(person.levels[skillIdx]||0);
   const effLevel = Math.max(0, baseLevel + (b.skillLevelBonus||0));
   const actionSeconds = BASE_ACTION_SEC / Math.max(0.05, 1+(b.speedBonus||0));
   const workP = Math.max(0, Math.floor(effLevel * (1+(b.efficiencyBonus||0))));
@@ -959,26 +1355,42 @@ function svgIcon(id, w, h) {
   return '<svg viewBox="0 0 50 50" style="width:'+w+'px;height:'+h+'px"><use xlink:href="#'+id+'"></use></svg>';
 }
 
+// 统一的 buff 类型 → 加成字段映射（神龛 / 成就 / 房屋共用）。
+// 生活试炼推演只用 speed/efficiency/success/gathering/skillLevel；
+// damage / attackSpeed / castSpeed / maxHp / maxMp 等战斗向字段先算好，供后续战斗试炼直接取用。
+function addBonusByType(out, type, amt, skillId) {
+  if (!type || !amt) return;
+  switch (type) {
+    case 'efficiency':         out.efficiencyBonus = (out.efficiencyBonus||0) + amt; break;
+    case 'action_speed': case 'speed': out.speedBonus = (out.speedBonus||0) + amt; break;
+    case 'success_rate': case 'enhancing_success': out.successBonus = (out.successBonus||0) + amt; break;
+    case 'gathering':          out.gatheringBonus = (out.gatheringBonus||0) + amt; break;
+    case 'damage':             out.damageBonus = (out.damageBonus||0) + amt; break;
+    case 'attack_speed':       out.attackSpeedBonus = (out.attackSpeedBonus||0) + amt; break;
+    case 'cast_speed':         out.castSpeedBonus = (out.castSpeedBonus||0) + amt; break;
+    case 'max_hitpoints':      out.maxHpBonus = (out.maxHpBonus||0) + amt; break;
+    case 'max_manapoints':     out.maxMpBonus = (out.maxMpBonus||0) + amt; break;
+    case 'rare_find':          out.rareFindBonus = (out.rareFindBonus||0) + amt; break;
+    case 'essence_find':       out.essenceFindBonus = (out.essenceFindBonus||0) + amt; break;
+    case 'wisdom':             out.wisdomBonus = (out.wisdomBonus||0) + amt; break;
+    default:
+      // <attr>_level：只有与当前技能一致（或未指定技能）时才计入有效等级；
+      // 战斗属性等级（attack/defense/... ）不影响生活试炼。
+      if (type.slice(-6) === '_level') {
+        const attr = type.slice(0, -6);
+        if (!skillId || attr === skillId) out.skillLevelBonus = (out.skillLevelBonus||0) + amt;
+      }
+  }
+}
+
 // === Rendering ===
 function renderTableHeader() {
   const thead = document.getElementById('member-thead');
   let html = '<tr>';
   html += '<th class="assign-col">'+t('assignCol')+'</th>';
   html += '<th class="name-col">'+t('nameCol')+'</th>';
-  for (let s = 0; s < 10; s++) {
-    html += '<th class="skill-col" title="'+skillLabel(s)+'">'+svgIcon(SKILL_KEYS[s],20,20)+'</th>';
-  }
-  // 个人神龛 5 列（图标列头；力量/节奏影响试炼，其余置灰）
-  for (const d of shrineDefsList()) {
-    const lbl = (state.lang === 'en') ? d.en : d.zh;
-    const eff = (state.lang === 'en') ? d.effectEn : d.effectZh;
-    const tip = lbl + ': ' + eff + ' · ' + (d.affectsTrial ? t('shrineAffectsTrial') : t('shrineNotAffectsTrial'));
-    html += '<th class="shrine-col'+(d.affectsTrial ? '' : ' is-inactive')+'" title="'+escHtml(tip)+'">'
-      + svgIcon(d.icon || ('guild_shrine_'+d.key), 20, 20) + '</th>';
-  }
-  for (let i = 0; i < EQUIP_TYPES.length; i++) {
-    html += '<th class="equip-col">'+equipShortLabel(i)+'</th>';
-  }
+  // 专业等级(10) / 装备(22) / 房屋(17) / 神龛(10) / 成就(6) 全部个人数据已移入「详情」弹窗（见 openMemberDetail）
+  html += '<th class="detail-col">'+t('detailBtn')+'</th>';
   html += '<th></th>';
   html += '</tr>';
   thead.innerHTML = html;
@@ -992,15 +1404,18 @@ function renderAll() {
   renderMemberTable();
   renderSummary();
   updateStaticText();
+  renderMemberDetailIfOpen();
 }
 
 function updateStaticText() {
   document.getElementById('h1-title').textContent = t('title');
   document.getElementById('h2-trial').textContent = t('trialConfig');
   document.getElementById('h2-member').firstChild.textContent = t('memberData') + ' ';
+  { const mHint = document.getElementById('member-hint'); if (mHint) mHint.title = t('memberDetailTip'); }
   document.getElementById('btn-add-member').textContent = '+ '+t('addMember');
   document.getElementById('btn-share').textContent = t('share');
   document.getElementById('btn-import-json').textContent = t('importData');
+  document.getElementById('btn-export-json').textContent = t('exportData');
   document.getElementById('export-script-link').title = t('exportScriptTitle');
   document.getElementById('btn-calculate').textContent = t('calculate');
   document.getElementById('btn-lang').textContent = t('language');
@@ -1077,21 +1492,48 @@ function shrineDefsList() {
   return GUILD_SHRINE_KEYS.map(k => ({ key:k, zh:k, en:k, icon:'guild_shrine_'+k,
     type:(buffs[k]||{}).type, flatPerLevel:(buffs[k]||{}).flatPerLevel, affectsTrial:(k==='force'||k==='tempo') }));
 }
-function memberShrineBadgeText(p) {
-  const en = (state.lang === 'en');
-  const parts = [];
-  for (const d of shrineDefsList()) {
-    if (!d.affectsTrial) continue;
-    const lv = memberShrineLevel(p, d.key);
-    if (lv > 0) parts.push((en ? d.en : d.zh) + lv);
+// 注：角色名后不再显示神龛等级（神龛改在成员详情弹窗编辑），原 memberShrineBadgeText / personalShrineBadge 已移除
+
+// 成就档位（成员级「个人持久化数据」，逐成员可编辑并随共享上传）。
+// 只有 Beginner/Adept 两档会影响试炼指标，实际加成数值仍由 EMBEDDED_CLIENT_DATA.achievementTierDetailMap 决定。
+function achievementTiersList() {
+  return (typeof ACHIEVEMENT_TIERS !== 'undefined' && ACHIEVEMENT_TIERS.length) ? ACHIEVEMENT_TIERS : [];
+}
+// 成员勾选的档位 → 游戏 hrid 布尔表（applyAchievementTierBuffs 的入参格式）
+function memberAchievementValue(p) {
+  if (!p || !p.achievements) return null;
+  const val = {};
+  for (const d of achievementTiersList()) if (p.achievements[d.key]) val[d.hrid] = true;
+  return val;
+}
+function memberAchievementDone(p, key) {
+  return !!(p && p.achievements && p.achievements[key]);
+}
+// 导入 profile 的成就信息 → 成员可编辑的档位勾选（个人持久化数据）
+function materializeMemberAchievements(profile) {
+  const out = {};
+  for (const d of achievementTiersList()) out[d.key] = false;
+  if (!profile) return out;
+  let value = null;
+  if (profile.achievementsValue && typeof profile.achievementsValue === 'object' && !Array.isArray(profile.achievementsValue)) {
+    value = profile.achievementsValue;
+  } else {
+    // 共享资料里成就常见为数组 characterAchievements（也可能叫 achievements）
+    const rawMap = normalizeAchievementsMap(profile.achievements || profile.characterAchievements);
+    if (rawMap && typeof computeAchievementsValue === 'function') value = computeAchievementsValue(rawMap);
   }
-  return parts.join(' ');
+  if (value && typeof value === 'object') {
+    for (const d of achievementTiersList()) if (value[d.hrid] === true) out[d.key] = true;
+  }
+  return out;
 }
 
 function renderMemberTable() {
   const tbody = document.getElementById('member-tbody');
+  // 装备数据归一化（旧「一槽一件」的身体/腿部/背部 → 生活装备「拥有制」集合；幂等）
+  for (const p of state.members) normalizeMemberEquip(p);
   if (state.members.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="40" style="color:var(--text-faint);padding:20px">'+t('noMembers')+'</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-faint);padding:20px">'+t('noMembers')+'</td></tr>';
     return;
   }
   tbody.innerHTML = state.members.map(p => {
@@ -1104,34 +1546,172 @@ function renderMemberTable() {
     } else {
       assignContent = '-';
     }
-    let skillCells = '';
-    for (let s = 0; s < 10; s++) {
-      skillCells += '<td class="skill-input"><input type="number" value="'+(p.levels[s]||0)+'" min="0" max="999" onchange="updateSkillLevel('+p.id+','+s+',this.value)"></td>';
-    }
-    // 个人神龛等级（5 项，逐人可编辑；力量/节奏影响试炼，其余不影响）
-    let shrineCells = '';
-    for (const d of shrineDefsList()) {
-      const cls = d.affectsTrial ? 'skill-input shrine-input' : 'skill-input shrine-input is-inactive';
-      shrineCells += '<td class="'+cls+'" title="'+escHtml((state.lang==='en'?d.en:d.zh)+': '+(state.lang==='en'?d.effectEn:d.effectZh)+' · '+(d.affectsTrial?t('shrineAffectsTrial'):t('shrineNotAffectsTrial')))+'">'
-        + '<input type="number" value="'+memberShrineLevel(p, d.key)+'" min="0" max="'+GUILD_SHRINE_MAX_LEVEL+'" onchange="updateMemberShrine('+p.id+',\''+d.key+'\',this.value)"></td>';
-    }
-    let equipCells = '';
-    for (let i = 0; i < EQUIP_TYPES.length; i++) {
-      const slot = EQUIP_TYPES[i];
-      const eq = p.equipment && p.equipment[slot];
-      if (eq && eq.iconId) {
-        equipCells += '<td><div class="equip-cell" onclick="openEquipPicker('+p.id+',\''+slot+'\')">'+svgIcon(eq.iconId,30,30)+'<span class="enhance-badge">+'+(eq.enhance||0)+'</span></div></td>';
-      } else {
-        equipCells += '<td><div class="equip-cell empty" onclick="openEquipPicker('+p.id+',\''+slot+'\')"></div></td>';
-      }
-    }
+    // 专业 / 装备 / 房屋 / 神龛 / 成就 全部个人数据都在「详情」弹窗里编辑（见 openMemberDetail）
     return '<tr>'+
       '<td class="assign-cell '+assignClass+'">'+assignContent+'</td>'+
-      '<td class="name-cell"><input type="text" value="'+escHtml(p.name)+'" onchange="updateMemberName('+p.id+',this.value)">'+personalShrineBadge(p)+'</td>'+
-      skillCells + shrineCells + equipCells +
+      '<td class="name-cell"><input type="text" value="'+escHtml(p.name)+'" onchange="updateMemberName('+p.id+',this.value)"></td>'+
+      '<td class="detail-cell"><button class="btn btn-sm" onclick="openMemberDetail('+p.id+')">'+t('detailBtn')+'</button></td>'+
       '<td><button class="btn btn-sm btn-danger" onclick="removeMember('+p.id+')">'+t('deleteBtn')+'</button></td>'+
     '</tr>';
   }).join('');
+}
+
+// === 成员详情弹窗：专业 / 装备 / 房屋 / 神龛 / 成就 等个人数据集中编辑 ===
+// memberDetailId 记录当前打开的成员（null = 未打开）；渲染前用它判断是否需要刷新弹窗。
+let memberDetailId = null;
+function openMemberDetail(id) {
+  const p = state.members.find(x => x.id === id);
+  if (!p) return;
+  memberDetailId = id;
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'member-detail-overlay';
+  overlay.onclick = (e) => { if (e.target === overlay) closeMemberDetail(); };
+  overlay.innerHTML = '<div class="modal-dialog" style="max-width:920px">'
+    + '<div class="modal-title"><span id="member-detail-title"></span><button class="modal-close" onclick="closeMemberDetail()">&times;</button></div>'
+    + '<div class="detail-body" id="member-detail-body"></div>'
+    + '<div class="modal-actions"><button class="btn btn-primary" onclick="closeMemberDetail()">'+t('confirm')+'</button></div>'
+    + '</div>';
+  document.body.appendChild(overlay);
+  renderMemberDetail(id);
+}
+function closeMemberDetail() {
+  memberDetailId = null;
+  const o = document.getElementById('member-detail-overlay');
+  if (o) o.remove();
+}
+// 弹窗打开时，成员数据变化后刷新其内容（未打开则什么都不做）
+function renderMemberDetailIfOpen(id) {
+  if (memberDetailId === null) return;
+  if (id !== undefined && id !== memberDetailId) {
+    // 该成员已被删除 → 关掉弹窗
+    if (!state.members.some(x => x.id === memberDetailId)) { closeMemberDetail(); }
+    return;
+  }
+  renderMemberDetail(memberDetailId);
+}
+function renderMemberDetail(id) {
+  const p = state.members.find(x => x.id === id);
+  if (!p) { closeMemberDetail(); return; }
+  normalizeMemberEquip(p);
+  const en = (state.lang === 'en');
+  const titleEl = document.getElementById('member-detail-title');
+  if (titleEl) titleEl.textContent = (p.name || '') + ' · ' + t('memberDetail');
+  const body = document.getElementById('member-detail-body');
+  if (!body) return;
+  // 1) 专业等级：10 项（挤奶…强化），逐人可编辑，随共享数据上传
+  let skillHtml = '';
+  for (let s = 0; s < 10; s++) {
+    skillHtml += '<label class="detail-item" title="'+escHtml(skillLabel(s))+'">'
+      + svgIcon(SKILL_KEYS[s], 20, 20)
+      + '<span class="di-label">'+escHtml(skillLabel(s))+'</span>'
+      + '<input type="number" value="'+(p.levels[s]||0)+'" min="0" max="999" onchange="updateSkillLevel('+p.id+','+s+',this.value)"></label>';
+  }
+  // 2) 装备三区：① 生活装备（勾选制）② 生活·战斗两用（整槽勾选）③ 战斗装备（配装单选）+ 生活工具
+  const singleEquipCell = (slot) => {
+    const lbl = equipLabel(EQUIP_TYPES.indexOf(slot));
+    const eq = p.equipment && p.equipment[slot];
+    return '<div class="detail-item equip-item" title="'+escHtml(lbl)+'">'
+      + '<span class="di-label">'+escHtml(lbl)+'</span>'
+      + (eq && eq.iconId
+          ? '<div class="equip-cell" onclick="openEquipPicker('+p.id+',\''+slot+'\')">'+svgIcon(eq.iconId,24,24)+'<span class="enhance-badge">+'+(eq.enhance||0)+'</span></div>'
+          : '<div class="equip-cell empty" onclick="openEquipPicker('+p.id+',\''+slot+'\')"></div>')
+      + '</div>';
+  };
+  // 一个装备家族 = 一个方格（与工具 / 战斗装备的 equip-cell 同款，只有图标，物品名放悬停提示）。
+  // 点格子 = 打开强化小面板；未拥有 → 虚线框 + 图标灰度；已拥有 → 实线高亮 + 左上角标「★ +N」（★ 在强化等级左边）。
+  const familyChip = (slot, fam) => {
+    const st = ownedEntry(p, slot, fam.id) || { enh: 0, refined: false };
+    const on = ownedEntry(p, slot, fam.id) != null;
+    const nm = familyName(fam.id, fam.name);
+    const ttl = nm + ' · ' + equipLabel(EQUIP_TYPES.indexOf(slot)) + (fam.refined ? ' · ' + t('refineToggle') : '');
+    const iconId = fam.refined && st.refined ? fam.id + '_refined' : fam.id;
+    return '<div class="equip-cell own-cell' + (on ? ' is-owned' : ' is-off') + '" title="'+escHtml(ttl)+'"'
+      + ' onclick="openEquipEnhPanel('+p.id+',\''+slot+'\',\''+fam.id+'\',this)">'
+      + svgIcon(iconId, 26, 26)
+      + (on ? '<span class="own-badges">'
+          + (st.refined ? '<span class="refine-star">\u2605</span>' : '')
+          + '<span class="enhance-badge">+'+st.enh+'</span>'
+          + '</span>' : '')
+      + '</div>';
+  };
+  const familyRow = (slot, label) => {
+    const fams = equipFamilies(slot);
+    if (!fams.length) return '';
+    return '<div class="own-row"><span class="own-row-label">'+escHtml(label)+'</span>'
+      + '<span class="own-chips">'+fams.map(f => familyChip(slot, f)).join('')+'</span></div>';
+  };
+  // ① 生活装备（只加生活技能加成）：上衣/下装/披风 可多件（同槽位择优）；头部/手部/脚部/副手 各 1 件
+  let lifeRows = '';
+  for (const slot of ['身体','腿部','背部']) lifeRows += familyRow(slot, lifeSlotLabel(slot));
+  const singleLife = ['头部','手部','脚部','副手'].map(s => equipFamilies(s).map(f => familyChip(s, f)).join('')).join('');
+  if (singleLife) lifeRows += '<div class="own-row"><span class="own-row-label">'+escHtml(t('lifeSingleRow'))+'</span><span class="own-chips">'+singleLife+'</span></div>';
+  // ② 生活 · 战斗两用（项链/耳环/戒指/袋子）：一槽一件（生活件与战斗件互替）→ 与生活工具同款「配装选择器」
+  let hybridHtml = '';
+  for (const slot of HYBRID_SLOTS) hybridHtml += singleEquipCell(slot);
+  // 生活工具（唯一一件）：10 个单选槽
+  let toolHtml = '';
+  for (const slot of TOOL_SLOTS) toolHtml += singleEquipCell(slot);
+  // ③ 战斗装备（配装制：一槽一件）
+  let combatHtml = '';
+  for (const slot of COMBAT_EQUIP_SLOTS) combatHtml += singleEquipCell(slot);
+  // 3) 房屋：17 房间（10 生活 + 7 战斗），战斗房间置灰
+  let houseHtml = '';
+  for (const d of houseRoomDefsList()) {
+    const cls = 'detail-item' + (d.affectsTrial ? '' : ' is-inactive');
+    const scope = d.affectsTrial ? t('shrineAffectsTrial') : t('shrineCombatOnly');
+    houseHtml += '<label class="'+cls+'" title="'+escHtml((en?d.en:d.zh)+' · '+(en?d.effectEn:d.effectZh)+' · '+scope)+'">'
+      + svgIcon(d.icon || ('house_'+d.key), 20, 20)
+      + '<span class="di-label">'+escHtml(en?d.en:d.zh)+'</span>'
+      + '<input type="number" value="'+houseRoomLevel(p, d.key)+'" min="0" max="'+HOUSE_ROOM_MAX_LEVEL+'" onchange="updateMemberHouseRoom('+p.id+',\''+d.key+'\',this.value)"></label>';
+  }
+  // 4) 神龛：10 槽位（5 座 × 生活/战斗），分两行 —— 上行生活类、下行战斗类；不影响试炼推演的置灰
+  const shrineItem = (s) => {
+    const cls = 'detail-item' + (s.affectsTrial ? '' : ' is-inactive');
+    const scope = s.affectsTrial ? t('shrineAffectsTrial') : (s.affectsCombat ? t('shrineCombatOnly') : t('shrineNotAffectsTrial'));
+    const full = (en ? s.en : s.zh);
+    // 标签只保留神龛本名（去掉「神龛」二字与「（生活）/（战斗）」后缀）—— 变体由分行的「生活类 / 战斗类」标签表达
+    const short = full.replace(/神龛/g, '').replace(/ Shrine/g, '')
+      .replace(/\s*[（(](生活|战斗|Skilling|Combat)[）)]/g, '').trim() || full;
+    return '<label class="'+cls+'" title="'+escHtml(full+': '+(en?s.effectEn:s.effectZh)+' · '+scope)+'">'
+      + svgIcon(s.icon || ('guild_shrine_'+s.shrine), 20, 20)
+      + '<span class="di-label">'+escHtml(short)+'</span>'
+      + '<input type="number" value="'+memberShrineLevel(p, s.slot)+'" min="0" max="'+GUILD_SHRINE_MAX_LEVEL+'" onchange="updateMemberShrine('+p.id+',\''+s.slot+'\',this.value)"></label>';
+  };
+  const skillingSlotList = shrineSlotsList().filter(s => s.kind !== 'combat');
+  const combatSlotList = shrineSlotsList().filter(s => s.kind === 'combat');
+  const shrineHtml = (skillingSlotList.length || combatSlotList.length)
+    ? '<div class="detail-rows">'
+      + '<div class="detail-row"><span class="detail-row-label">'+escHtml(t('detailShrineSkillingRow'))+'</span><div class="detail-grid cols-5">'+skillingSlotList.map(shrineItem).join('')+'</div></div>'
+      + '<div class="detail-row"><span class="detail-row-label">'+escHtml(t('detailShrineCombatRow'))+'</span><div class="detail-grid cols-5">'+combatSlotList.map(shrineItem).join('')+'</div></div>'
+      + '</div>'
+    : '';
+  // 5) 成就完成：6 档勾选（不影响试炼推演的置灰 —— 新手/老手/精英）
+  let achHtml = '';
+  for (const d of achievementTiersList()) {
+    const cls = 'detail-item' + (d.affectsTrial ? '' : ' is-inactive');
+    const req = d.total ? (' · '+(en ? 'needs all '+d.total : '需该档全部 '+d.total+' 项')) : '';
+    achHtml += '<label class="'+cls+'" title="'+escHtml((en?d.en:d.zh)+' · '+(en?d.effectEn:d.effectZh)+req)+'">'
+      + '<input type="checkbox"'+(memberAchievementDone(p, d.key) ? ' checked' : '')
+      + ' onchange="updateMemberAchievement('+p.id+',\''+d.key+'\',this.checked)">'
+      + '<span class="di-label">'+escHtml(en?d.en:d.zh)+'<span class="di-sub">'+escHtml(en?d.effectEn:d.effectZh)+'</span></span></label>';
+  }
+  // 区块顺序：专业 → 装备 → 房屋 → 神龛 → 成就完成
+  body.innerHTML =
+    '<div class="detail-section"><div class="detail-section-title" title="'+escHtml(t('detailSkillTip'))+'">'+escHtml(t('detailSkillSec'))+'</div><div class="detail-grid">'+skillHtml+'</div></div>'
+    + '<div class="detail-section"><div class="detail-section-title" title="'+escHtml(t('detailEquipTip'))+'">'+escHtml(t('detailEquipSec'))+'</div>'
+      + '<div class="detail-subtitle" title="'+escHtml(t('lifeEquipTip'))+'">'+escHtml(t('lifeEquipSec'))+'</div>'
+      + '<div class="own-rows">'+lifeRows+'</div>'
+      + '<div class="detail-subtitle" title="'+escHtml(t('hybridEquipTip'))+'">'+escHtml(t('hybridEquipSec'))+'</div>'
+      + '<div class="detail-grid">'+hybridHtml+'</div>'
+      + '<div class="detail-subtitle" title="'+escHtml(t('lifeToolsTip'))+'">'+escHtml(t('lifeToolsSec'))+'</div>'
+      + '<div class="detail-grid">'+toolHtml+'</div>'
+      + '<div class="detail-subtitle" title="'+escHtml(t('combatEquipTip'))+'">'+escHtml(t('combatEquipSec'))+'</div>'
+      + '<div class="detail-grid">'+combatHtml+'</div>'
+      + '</div>'
+    + '<div class="detail-section"><div class="detail-section-title" title="'+escHtml(t('houseRoomsTip'))+'">'+escHtml(t('detailHouseSec'))+'</div><div class="detail-grid">'+houseHtml+'</div></div>'
+    + '<div class="detail-section"><div class="detail-section-title" title="'+escHtml(t('guildShrinePerMemberTip'))+'">'+escHtml(t('detailShrineSec'))+'</div>'+shrineHtml+'</div>'
+    + '<div class="detail-section"><div class="detail-section-title" title="'+escHtml(t('achievementsTip'))+'">'+escHtml(t('detailAchSec'))+'</div><div class="detail-grid">'+achHtml+'</div></div>';
 }
 
 function renderSummary() {
@@ -1154,14 +1734,7 @@ function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// 成员名下方小徽标：显示该成员的力量/节奏神龛等级（影响试炼的那两项），全 0 时不显示
-function personalShrineBadge(p) {
-  const txt = memberShrineBadgeText(p);
-  if (!txt) return '';
-  const en = (state.lang === 'en');
-  return '<span class="personal-shrine-badge" title="'+escHtml(en?'Personal shrine buffs (Force/Tempo)':'个人神龛增益 (力量/节奏)')+'">'
-    + escHtml((en?'Shrine ':'神龛 ') + txt) + '</span>';
-}
+// 注：角色名后不再显示神龛等级（神龛改在成员详情弹窗编辑），原 personalShrineBadge 已移除
 
 // === Theme & Language ===
 function toggleTheme() {
@@ -1219,37 +1792,31 @@ function renderGuildInputs() {
     const lifeKeys = (typeof GUILD_BUILDING_LIFE_KEYS !== 'undefined') ? GUILD_BUILDING_LIFE_KEYS : [];
     const combatKeys = (typeof GUILD_BUILDING_COMBAT_KEYS !== 'undefined') ? GUILD_BUILDING_COMBAT_KEYS : [];
     const parts = [];
-    // 第一块：功能建筑（6 座，公会全局效果，不影响试炼层数）
-    if (util.length) {
-      parts.push('<span class="global-buff-group-label">'+escHtml(t('guildBuildingsUtility'))+'</span>');
-      parts.push(util.map(u => {
-        const iconId = (GUILD_BUILDING_ICONS && GUILD_BUILDING_ICONS[u.key]) || u.icon;
-        const tip = nm(u.zh,u.en) + ' · ' + nm(u.effectZh,u.effectEn) + ' — ' + t('guildBuildingsTip');
-        return item(iconId, nm(u.zh,u.en), tip, u.key, ' is-utility');
-      }).join(''));
-      parts.push('<span class="global-buff-sep"></span>');
-    }
-    // 第二块：生活类建筑（10 座，对应生活技能，影响生活试炼）
-    const life = trial.filter(td => lifeKeys.indexOf(td.skill) >= 0);
-    if (life.length) {
-      parts.push('<span class="global-buff-group-label">'+escHtml(t('guildBuildingsLife'))+'</span>');
-      parts.push(life.map(td => {
-        const iconId = (GUILD_BUILDING_ICONS && GUILD_BUILDING_ICONS[td.skill]) || td.icon;
-        const tip = nm(td.zh,td.en) + ' · ' + nm(td.skillZh,td.skillEn) + ' +' + GUILD_BUILDING_SKILL_PER_LEVEL + ' — ' + t('guildBuildingsTip');
-        return item(iconId, nm(td.zh,td.en), tip, td.skill, ' is-life');
-      }).join(''));
-      parts.push('<span class="global-buff-sep"></span>');
-    }
-    // 第三块：战斗类建筑（7 座，对应战斗属性；暂未模拟战斗试炼）
-    const combat = trial.filter(td => combatKeys.indexOf(td.skill) >= 0);
-    if (combat.length) {
-      parts.push('<span class="global-buff-group-label">'+escHtml(t('guildBuildingsCombat'))+'</span>');
-      parts.push(combat.map(td => {
-        const iconId = (GUILD_BUILDING_ICONS && GUILD_BUILDING_ICONS[td.skill]) || td.icon;
-        const tip = nm(td.zh,td.en) + ' · ' + nm(td.skillZh,td.skillEn) + ' +' + GUILD_BUILDING_SKILL_PER_LEVEL + ' — ' + t('guildBuildingsTip');
-        return item(iconId, nm(td.zh,td.en), tip, td.skill, ' is-combat');
-      }).join(''));
-    }
+    // 每块 = 一组标题 + 一个「每行最多 5 个」的等宽网格（列宽一致 → 字数不同的建筑名自动对齐）
+    const row = (labelKey, items) => {
+      if (!items.length) return;
+      parts.push('<div class="global-buff-row">'
+        + '<span class="global-buff-group-label">'+escHtml(t(labelKey))+'</span>'
+        + '<div class="global-buff-grid">'+items.join('')+'</div></div>');
+    };
+    // 第一行：功能建筑（6 座，公会全局效果，不影响试炼层数）
+    row('guildBuildingsUtility', util.map(u => {
+      const iconId = (GUILD_BUILDING_ICONS && GUILD_BUILDING_ICONS[u.key]) || u.icon;
+      const tip = nm(u.zh,u.en) + ' · ' + nm(u.effectZh,u.effectEn) + ' — ' + t('guildBuildingsTip');
+      return item(iconId, nm(u.zh,u.en), tip, u.key, ' is-utility');
+    }));
+    // 第二行：生活类建筑（10 座，对应生活技能，影响生活试炼）
+    row('guildBuildingsLife', trial.filter(td => lifeKeys.indexOf(td.skill) >= 0).map(td => {
+      const iconId = (GUILD_BUILDING_ICONS && GUILD_BUILDING_ICONS[td.skill]) || td.icon;
+      const tip = nm(td.zh,td.en) + ' · ' + nm(td.skillZh,td.skillEn) + ' +' + GUILD_BUILDING_SKILL_PER_LEVEL + ' — ' + t('guildBuildingsTip');
+      return item(iconId, nm(td.zh,td.en), tip, td.skill, ' is-life');
+    }));
+    // 第三行：战斗类建筑（7 座，对应战斗属性；暂未模拟战斗试炼）
+    row('guildBuildingsCombat', trial.filter(td => combatKeys.indexOf(td.skill) >= 0).map(td => {
+      const iconId = (GUILD_BUILDING_ICONS && GUILD_BUILDING_ICONS[td.skill]) || td.icon;
+      const tip = nm(td.zh,td.en) + ' · ' + nm(td.skillZh,td.skillEn) + ' +' + GUILD_BUILDING_SKILL_PER_LEVEL + ' — ' + t('guildBuildingsTip');
+      return item(iconId, nm(td.zh,td.en), tip, td.skill, ' is-combat');
+    }));
     bb.innerHTML = parts.join('');
   }
 }
@@ -1350,7 +1917,11 @@ function openEquipPicker(memberId, slot) {
   if (!person) return;
   const existing = person.equipment && person.equipment[slot];
   if (existing) { pickerState.iconId = existing.iconId; pickerState.enhance = existing.enhance || 0; }
-  const icons = EQUIP_ICONS[slot] || [];
+  const allIcons = EQUIP_ICONS[slot] || [];
+  // 生活装备（上衣/下装/披风/单件生活件）不从这个选择器录入 —— 它们属于「生活装备 · 勾选制」区。
+  // 两用槽（项链/耳环/戒指/袋子）走本选择器、且**不排除**任何物品（生活件与战斗件都能选，一槽一件）；
+  // 战斗装备 / 生活工具同样走本选择器，但会排除已在生活装备区勾选的同槽位物品，避免重复录入。
+  const icons = allIcons.filter(id => !isOwnedFamily(slot, id));
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.id = 'equip-picker-overlay';
@@ -1410,7 +1981,9 @@ function filterEquipIcons(query) {
   const q = query.toLowerCase().trim();
   document.querySelectorAll('#equip-icon-grid .equip-icon-option').forEach(el => {
     const name = el.dataset.iconId.replace(/_/g, ' ');
-    el.style.display = (!q || name.toLowerCase().includes(q)) ? '' : 'none';
+    const label = el.dataset.name || '';
+    const hit = !q || name.toLowerCase().includes(q) || label.toLowerCase().includes(q);
+    el.style.display = hit ? '' : 'none';
   });
 }
 function confirmEquip() {
@@ -1421,15 +1994,124 @@ function confirmEquip() {
   person.equipment[pickerState.slot] = { iconId: pickerState.iconId, enhance: pickerState.enhance };
   person._ts = Date.now();
   closeEquipPicker();
-  renderMemberTable();
   saveData();
+  refreshMemberViews(pickerState.memberId);
 }
 function clearEquip() {
   const person = state.members.find(p => p.id === pickerState.memberId);
   if (person && person.equipment) { delete person.equipment[pickerState.slot]; person._ts = Date.now(); }
   closeEquipPicker();
-  renderMemberTable();
   saveData();
+  refreshMemberViews(pickerState.memberId);
+}
+
+// === 装备「拥有制」：点方格 = 打开强化等级 / 精炼（★）小面板 ===
+// 未拥有的方格点一下即以 +0 拥有并打开面板；面板里可设强化等级（+0~+20）、切 ★ 精炼，或「取消拥有」。
+// 面板挂在 body 上（position:fixed），不会被弹窗的滚动容器裁掉。
+let enhPanelState = null;   // { memberId, slot, base }
+
+function setOwnedEnhValue(memberId, slot, baseId, value) {
+  const person = state.members.find(x => x.id === memberId);
+  if (!person) return;
+  const cur = ownedEntry(person, slot, baseId);
+  if (!cur) return;
+  setOwnedEntry(person, slot, baseId, clampEnhance(value), cur.refined);
+  saveData();
+  refreshMemberViews(memberId);
+}
+function stepOwnedEnh(delta) {
+  const st = enhPanelState;
+  if (!st) return;
+  const person = state.members.find(x => x.id === st.memberId);
+  if (!person) return;
+  const cur = ownedEntry(person, st.slot, st.base);
+  if (!cur) return;
+  const next = clampEnhance(cur.enh + delta);
+  setOwnedEntry(person, st.slot, st.base, next, cur.refined);
+  saveData();
+  const inp = document.getElementById('enh-pop-input');
+  if (inp) inp.value = String(next);
+  refreshMemberViews(st.memberId);
+}
+function setOwnedRefined(flag) {
+  const st = enhPanelState;
+  if (!st) return;
+  const person = state.members.find(x => x.id === st.memberId);
+  if (!person) return;
+  const cur = ownedEntry(person, st.slot, st.base);
+  if (!cur) return;
+  setOwnedEntry(person, st.slot, st.base, cur.enh, !!flag);
+  saveData();
+  refreshMemberViews(st.memberId);
+}
+function dropOwnedFromPanel() {
+  const st = enhPanelState;
+  if (!st) return;
+  const person = state.members.find(x => x.id === st.memberId);
+  if (person) { clearOwnedEntry(person, st.slot, st.base); saveData(); refreshMemberViews(st.memberId); }
+  closeEquipEnhPanel();
+}
+function openEquipEnhPanel(memberId, slot, baseId, anchor) {
+  closeEquipEnhPanel(true);
+  const person = state.members.find(x => x.id === memberId);
+  if (!person) return;
+  normalizeMemberEquip(person);
+  const fam = familyOf(slot, baseId);
+  if (!fam) return;
+  // 锚点位置必须在任何重绘之前取：下面「顺手拥有」会触发 refreshMemberViews，
+  // 重绘后传进来的 anchor 已经脱树，getBoundingClientRect() 会全归零（面板会跑到左上角）。
+  const anchorRect = (anchor && anchor.getBoundingClientRect) ? anchor.getBoundingClientRect() : null;
+  if (ownedEntry(person, slot, baseId) == null) {   // 点正文 = 顺手拥有它，再进面板调数值
+    setOwnedEntry(person, slot, baseId, 0, false);
+    saveData();
+    refreshMemberViews(memberId);
+  }
+  enhPanelState = { memberId: memberId, slot: slot, base: baseId };
+  const cur = ownedEntry(person, slot, baseId) || { enh: 0, refined: false };
+  const pop = document.createElement('div');
+  pop.className = 'enh-pop';
+  pop.id = 'enh-pop';
+  pop.onclick = (e) => e.stopPropagation();
+  pop.innerHTML =
+    '<div class="enh-pop-title">'+escHtml(familyName(baseId, fam.name))
+      + ' <span class="enh-pop-slot">'+escHtml(equipLabel(EQUIP_TYPES.indexOf(slot)))+'</span></div>'
+    + '<div class="enh-pop-row"><button class="enh-pop-step" onclick="stepOwnedEnh(-1)">&minus;</button>'
+    + '<input class="enh-pop-input" id="enh-pop-input" type="number" min="0" max="'+EQUIP_MAX_ENHANCE+'" value="'+cur.enh
+      + '" onchange="setOwnedEnhValue('+memberId+',\''+slot+'\',\''+baseId+'\',this.value)">'
+    + '<button class="enh-pop-step" onclick="stepOwnedEnh(1)">+</button>'
+    + '<span class="enh-pop-unit">+0 ~ +'+EQUIP_MAX_ENHANCE+'</span></div>'
+    + (fam.refined
+        ? '<label class="enh-pop-star"><input type="checkbox"'+(cur.refined ? ' checked' : '')
+          + ' onchange="setOwnedRefined(this.checked)"><span>\u2605 '+escHtml(t('refineToggle'))+'</span></label>'
+        : '')
+    + '<div class="enh-pop-actions">'
+    + '<button class="btn btn-sm btn-danger" onclick="dropOwnedFromPanel()">'+escHtml(t('unownBtn'))+'</button>'
+    + '<button class="btn btn-sm btn-primary" onclick="closeEquipEnhPanel()">'+escHtml(t('enhDone'))+'</button>'
+    + '</div>';
+  document.body.appendChild(pop);
+  // 定位：优先贴 chip 下方；越界时回收，尽量不出屏
+  const r = (anchorRect && (anchorRect.width || anchorRect.height))
+    ? anchorRect : { left: 8, top: 8, bottom: 8, right: 8 };
+  const pw = pop.offsetWidth || 214, ph = pop.offsetHeight || 128;
+  const vw = window.innerWidth || 1200, vh = window.innerHeight || 800;
+  const left = Math.max(8, Math.min(r.left, vw - pw - 8));
+  let top = r.bottom + 6;
+  if (top + ph > vh - 8) top = Math.max(8, r.top - ph - 6);
+  pop.style.left = left + 'px';
+  pop.style.top = top + 'px';
+  // 「点外部关闭」要延后一帧再挂：触发本次打开的那次 click 还在冒泡，
+  // 立刻挂监听会在同一轮事件里就把它关掉（面板闪一下即消失，看起来像「点了没反应」）。
+  setTimeout(function(){ document.addEventListener('click', closeEnhPanelOnOutside); }, 0);
+}
+function closeEnhPanelOnOutside(e) {
+  const pop = document.getElementById('enh-pop');
+  if (pop && pop.contains && !pop.contains(e.target)) closeEquipEnhPanel();
+}
+function closeEquipEnhPanel(silent) {
+  const pop = document.getElementById('enh-pop');
+  if (pop && pop.remove) pop.remove();
+  document.removeEventListener('click', closeEnhPanelOnOutside);
+  enhPanelState = null;
 }
 
 // === Member Management ===
@@ -1445,25 +2127,55 @@ function removeMember(id) {
   if (!state.deletedIds.includes(id)) state.deletedIds.push(id);
   renderMemberTable();
   renderSummary();
+  renderMemberDetailIfOpen(id);
   saveData();
 }
 function updateMemberName(id, value) {
   const p = state.members.find(p => p.id === id);
-  if (p) { p.name = value; p._ts = Date.now(); saveData(); }
+  if (p) { p.name = value; p._ts = Date.now(); saveData(); renderMemberDetailIfOpen(id); }
 }
 function updateSkillLevel(id, skillIdx, value) {
   const p = state.members.find(p => p.id === id);
-  if (p) { p.levels[skillIdx] = Math.max(0, parseInt(value)||0); p._ts = Date.now(); saveData(); }
+  if (!p) return;
+  p.levels[skillIdx] = Math.max(0, parseInt(value)||0);
+  p._ts = Date.now();
+  saveData();
+  renderMemberDetailIfOpen(id);
+}// 成员个人数据（神龛 / 成就 / 房屋）改动后：有分配结果就重算，否则重绘主表；再同步刷新已打开的详情弹窗
+function refreshMemberViews(id) {
+  if (state.result) calculate(); else { renderMemberTable(); renderSummary(); }
+  renderMemberDetailIfOpen(id);
 }
-// 个人神龛等级（力量/节奏/精神/稀有/学者），逐人可编辑，随共享数据上传
-function updateMemberShrine(id, key, value) {
+// 个人神龛等级（槽位 = <shrine>_skilling / <shrine>_combat，5 座 × 2 = 10 项），逐人可编辑，随共享数据上传
+function updateMemberShrine(id, slot, value) {
   const p = state.members.find(p => p.id === id);
   if (!p) return;
   if (!p.shrines) p.shrines = {};
-  p.shrines[key] = Math.max(0, Math.min(GUILD_SHRINE_MAX_LEVEL, Math.floor(Number(value) || 0)));
+  p.shrines[slot] = Math.max(0, Math.min(GUILD_SHRINE_MAX_LEVEL, Math.floor(Number(value) || 0)));
   p._ts = Date.now();
   saveData();
-  if (state.result) calculate(); else { renderMemberTable(); renderSummary(); }
+  refreshMemberViews(id);
+}
+// 房屋房间等级（17 个房间），逐人可编辑，随共享数据上传
+function updateMemberHouseRoom(id, key, value) {
+  const p = state.members.find(p => p.id === id);
+  if (!p) return;
+  if (!p.houseRooms) p.houseRooms = {};
+  const cap = (typeof HOUSE_ROOM_MAX_LEVEL !== 'undefined') ? HOUSE_ROOM_MAX_LEVEL : 20;
+  p.houseRooms[key] = Math.max(0, Math.min(cap, Math.floor(Number(value) || 0)));
+  p._ts = Date.now();
+  saveData();
+  refreshMemberViews(id);
+}
+// 成就档位（成员级「个人持久化数据」）：勾选/取消，随共享数据上传
+function updateMemberAchievement(id, key, checked) {
+  const p = state.members.find(p => p.id === id);
+  if (!p) return;
+  if (!p.achievements) p.achievements = {};
+  p.achievements[key] = !!checked;
+  p._ts = Date.now();
+  saveData();
+  refreshMemberViews(id);
 }
 
 // === Calculate ===
@@ -1507,29 +2219,143 @@ function parseMemberFromProfile(profile) {
       equipment[slot] = { iconId, enhance };
     }
   }
-  const out = { name, levels, equipment };
+  const out = { name, levels, equipment, ownedEquip: {} };
+  // 装备「拥有制」：把当前穿戴中、且属于可勾选家族的装备作为「拥有集合」的初值
+  // （游戏 profile_shared 只含穿戴中的装备，没有背包，其余拥有项需手工补勾）
+  for (const slot of OWNED_SLOTS) {
+    out.ownedEquip[slot] = {};
+    const eq = equipment[slot];
+    if (eq && eq.iconId && isOwnedFamily(slot, eq.iconId)) {
+      out.ownedEquip[slot][eq.iconId] = clampEnhance(eq.enhance);
+      delete equipment[slot];
+    }
+  }
   // 逐人加成数据：公会成员导出的是完整 profile，可能携带这些字段（成就/房屋 buff 依赖它们）
   if (profile.achievementsValue) out.achievementsValue = profile.achievementsValue;
   if (profile.achievementActionTypeBuffsDict) out.achievementActionTypeBuffsDict = profile.achievementActionTypeBuffsDict;
-  if (profile.achievements) out.achievements = profile.achievements;
+  // 成就档位：物化成成员级可编辑的「个人持久化数据」（随共享上传，勾选后为权威值）。
+  // 共享资料里成就常见为数组 characterAchievements（[{achievementHrid,isCompleted}]），由 materialize 统一归一化；
+  // 原始全表不保留（80 人 × 上百条会显著撑大共享载荷），只留影响试炼的 Beginner/Adept 两档。
+  out.achievements = materializeMemberAchievements(profile);
   if (profile.houseActionTypeBuffsDict) out.houseActionTypeBuffsDict = profile.houseActionTypeBuffsDict;
   if (profile.houseRoomLevels) out.houseRoomLevels = profile.houseRoomLevels;
   if (profile.characterHouseRoomMap) out.characterHouseRoomMap = profile.characterHouseRoomMap;
-  // 个人神龛增益等级：游戏的共享资料里带 guildBuffLevelMap（键 /guild_buffs/<shrine>_skilling）。
-  // 这是「个人属性」，直接物化成可编辑的 shrines 字段（同时保留原始 map 以便对照）。
-  if (profile.guildBuffLevelMap) {
-    out.guildBuffLevels = profile.guildBuffLevelMap;
-    out.shrines = {};
-    for (const d of shrineDefsList()) out.shrines[d.key] = memberShrineLevel({ guildBuffLevels: profile.guildBuffLevelMap }, d.key);
-  } else {
-    out.shrines = {};
-    for (const d of shrineDefsList()) out.shrines[d.key] = 0;
+  // 房屋房间等级：物化成成员级可编辑的 houseRooms（个人持久化数据，随共享上传）
+  out.houseRooms = materializeMemberHouseRooms(profile);
+  // 个人神龛增益等级：共享资料里带 guildBuffLevelMap（键 /guild_buffs/<shrine>_skilling 或 _combat）。
+  // 每座神龛拆成 生活/战斗 两个槽位，直接物化成可编辑的 shrines 字段（同时保留原始 map 以便对照）。
+  out.shrines = {};
+  const gmap = profile.guildBuffLevelMap;
+  if (gmap) out.guildBuffLevels = gmap;
+  for (const s of shrineSlotsList()) {
+    let lv = 0;
+    if (gmap) {
+      const key = s.buffHrid || ('/guild_buffs/' + s.slot);
+      if (gmap[key] != null) lv = Math.floor(Number(gmap[key]) || 0);
+    }
+    out.shrines[s.slot] = Math.max(0, Math.min(GUILD_SHRINE_MAX_LEVEL, lv));
   }
   // 公会建筑等级（公会全局）：导出脚本可能把 guild_updated 里的 guildBuildingLevelMap 挂在成员对象上
   if (profile._guildBuildingLevelMap) out._guildBuildingLevelMap = profile._guildBuildingLevelMap;
   if (profile.guildBuildingLevelMap) out._guildBuildingLevelMap = profile.guildBuildingLevelMap;
   return out;
 }
+// === Import / Export ===
+// 本计算器自己的备份格式标记：导入时据此区分「计算器备份」与「游戏成员 profile 数组」。
+const EXPORT_FORMAT = 'mwi-trial-calculator';
+const EXPORT_FORMAT_VERSION = 1;
+
+function downloadJSON(filename, data) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+}
+
+// 组装导出用的完整备份对象（纯函数：便于测试与复用）。
+function buildExportDump() {
+  return Object.assign({
+    _format: EXPORT_FORMAT,
+    _version: EXPORT_FORMAT_VERSION,
+    exportedAt: new Date().toISOString(),
+  }, sharedPayload());
+}
+
+// 导出当前全部数据（成员 / 试炼 / 公会建筑 / 公会名）为 JSON —— 可直接用「导入」按钮还原。
+function exportJson() {
+  const members = Array.isArray(state.members) ? state.members : [];
+  if (!members.length) { alert(t('exportEmpty')); return; }
+  const safeGuild = String(state.guild || 'guild').replace(/[\\/:*?"<>|]/g, '_');
+  const dateStr = new Date().toISOString().slice(0, 10);
+  downloadJSON('MWI试炼_' + safeGuild + '_' + members.length + '人_' + dateStr + '.json', buildExportDump());
+}
+
+// 判断一份已解析的 JSON 是不是「本计算器的备份」。
+// 认两种写法：① 带 _format 标记；② 直接形如 sharedPayload（含 members 数组）——
+// 方便把共享 bin 里的裸载荷直接拷出来导入。
+function isCalculatorDump(obj) {
+  return !!obj && !Array.isArray(obj) && (obj._format === EXPORT_FORMAT || Array.isArray(obj.members));
+}
+
+// 还原单个成员：备份里的成员已是计算器结构，这里只补齐字段 / 夹取取值范围（幂等）。
+function restoreMemberDump(m) {
+  if (!m || typeof m !== 'object') m = {};
+  const out = Object.assign({}, m);
+  out.name = String(m.name || '');
+  const lv = Array.isArray(m.levels) ? m.levels : [];
+  out.levels = SKILL_KEYS.map(function(_, i){ return Math.max(0, Math.floor(Number(lv[i]) || 0)); });
+  out.equipment = (m.equipment && typeof m.equipment === 'object') ? m.equipment : {};
+  out.ownedEquip = (m.ownedEquip && typeof m.ownedEquip === 'object') ? m.ownedEquip : {};
+  if (!out.shrines || typeof out.shrines !== 'object') out.shrines = {};
+  if (!out.houseRooms || typeof out.houseRooms !== 'object') out.houseRooms = {};
+  if (!out.achievements || typeof out.achievements !== 'object') out.achievements = {};
+  out._ts = Date.now();
+  return out;
+}
+
+// 用「计算器备份」整体还原状态。返回 null 表示这份数据不是备份。
+function importCalculatorDump(dump) {
+  const src = (dump && dump.payload && typeof dump.payload === 'object') ? dump.payload : dump;
+  const rawMembers = (src && Array.isArray(src.members)) ? src.members : null;
+  if (!rawMembers) return null;
+  // 公会名只在本地还没有时采用 —— 避免导入别人的备份时把当前共享空间的公会名改掉
+  if (src.guild && !state.guild) state.guild = String(src.guild);
+  state.members = rawMembers.map(restoreMemberDump);
+  state.members.forEach(function(m, i){ m.id = i; });
+  if (Array.isArray(src.trials) && src.trials.length) {
+    state.trials = src.trials.map(function(x){ return Object.assign({}, x); });
+  }
+  state.deletedIds = Array.isArray(src.deletedIds) ? src.deletedIds.slice() : [];
+  if (src.guildBuildings && typeof src.guildBuildings === 'object') {
+    const next = guildBuildingAllKeys().reduce(function(o,k){ o[k]=0; return o; }, {});
+    for (const k of Object.keys(next)) {
+      if (src.guildBuildings[k] != null) {
+        next[k] = Math.max(0, Math.min(GUILD_BUILDING_MAX_LEVEL, Math.floor(Number(src.guildBuildings[k]) || 0)));
+      }
+    }
+    state.guildBuildings = next;
+    state.guildBuildingsTs = Number(src.guildBuildingsTs) || Date.now();
+  }
+  applyTrialCaps();
+  state.members.forEach(normalizeMemberEquip);
+  return { count: state.members.length };
+}
+
+// 导入后落盘：共享模式下立即全量覆盖 bin（不走合并，防止被旧数据覆盖），否则只写本地。
+async function persistAfterImport() {
+  const data = JSON.stringify(sharedPayload());
+  try { localStorage.setItem(getStorageKey(), data); } catch(e) {}
+  if (state.isShared && state.binId && state.encKey) {
+    await forcePushToBin(data);
+  } else {
+    saveData();
+  }
+}
+
 function importJson() {
   const input = document.createElement('input');
   input.type = 'file'; input.accept = '.json';
@@ -1537,21 +2363,31 @@ function importJson() {
     const file = input.files[0]; if (!file) return;
     const reader = new FileReader();
     reader.onload = async () => {
-      let membersData;
-      try {
-        membersData = JSON.parse(reader.result);
-        if (!Array.isArray(membersData)) throw new Error('JSON must be an array');
-      } catch(e) {
-        alert('JSON parse error: ' + e.message);
+      let parsed;
+      try { parsed = JSON.parse(reader.result); }
+      catch(e) { alert('JSON parse error: ' + e.message); return; }
+
+      // ① 本计算器导出的完整备份 → 整体还原（成员 / 试炼 / 公会建筑 / 公会名）
+      if (isCalculatorDump(parsed)) {
+        const res = importCalculatorDump(parsed);
+        if (!res) { alert(t('importFailed')); return; }
+        await persistAfterImport();
+        renderAll();
+        if (state.members.length > 0) calculate();
+        alert(t('importSuccess')+': '+res.count);
         return;
       }
+
+      // ② 游戏导出的成员 profile 数组
+      if (!Array.isArray(parsed)) { alert(t('importFormatUnknown')); return; }
+      const membersData = parsed;
       const newMembers = [];
       for (const profile of membersData) {
-        const m = parseMemberFromProfile(profile);
-        if (m) {
-          m.id = newMembers.length > 0 ? newMembers[newMembers.length-1].id + 1 : 0;
-          m._ts = Date.now();   // 标记为最新，避免被旧共享 bin 数据在合并时覆盖
-          newMembers.push(m);
+        const m2 = parseMemberFromProfile(profile);
+        if (m2) {
+          m2.id = newMembers.length > 0 ? newMembers[newMembers.length-1].id + 1 : 0;
+          m2._ts = Date.now();   // 标记为最新，避免被旧共享 bin 数据在合并时覆盖
+          newMembers.push(m2);
         }
       }
       if (newMembers.length > 0) {
@@ -1559,13 +2395,7 @@ function importJson() {
         state.deletedIds = [];
         applyImportedGuildBuildings(membersData);   // 若导出数据带公会建筑等级（guild_updated），自动预填
         applyTrialCaps();
-        const data = JSON.stringify(sharedPayload());
-        try { localStorage.setItem(getStorageKey(), data); } catch(e) {}
-        if (state.isShared && state.binId && state.encKey) {
-          await forcePushToBin(data);   // 立即全量覆盖 bin，不走合并，防止被旧数据覆盖
-        } else {
-          saveData();
-        }
+        await persistAfterImport();
         renderAll();
         if (state.members.length > 0) calculate();
         alert(t('importSuccess')+': '+newMembers.length);
@@ -1960,6 +2790,7 @@ __SVG_SYMBOLS__
     <button class="btn" id="btn-refresh" onclick="refreshFromServer()" style="display:none">🔄</button>
     <button class="btn" id="btn-share" onclick="openShareDialog()">共享设置</button>
     <button class="btn" id="btn-import-json" onclick="importJson()">导入</button>
+    <button class="btn" id="btn-export-json" onclick="exportJson()">导出</button>
     <a href="mwi_data_export.user.js" download class="btn btn-sm" id="export-script-link" style="font-size:12px;padding:4px 8px;opacity:.6" title="">📦</a>
     <button class="btn btn-primary" id="btn-calculate" onclick="calculate()">计算最优分配</button>
   </div>
@@ -1988,7 +2819,7 @@ __SVG_SYMBOLS__
     </label>
   </div>
   <h3 id="h3-guild-buildings">公会建筑 <span class="global-buff-hint" id="guild-buildings-hint" title=""></span> <span class="global-buff-subhint" id="guild-buildings-shared"></span></h3>
-  <div class="global-buff-bar" id="guild-buildings-bar"></div>
+  <div class="global-buff-bar is-stacked" id="guild-buildings-bar"></div>
 </div>
 
 <div class="trial-section">
@@ -1997,7 +2828,7 @@ __SVG_SYMBOLS__
 </div>
 
 <div class="member-section">
-  <h2 id="h2-member">成员数据 <button class="btn btn-sm" id="btn-add-member" onclick="addMember()">+ 添加成员</button></h2>
+  <h2 id="h2-member">成员数据 <span class="global-buff-hint" id="member-hint" title=""></span> <button class="btn btn-sm" id="btn-add-member" onclick="addMember()">+ 添加成员</button></h2>
   <div class="table-wrap">
     <table class="member-table">
       <thead id="member-thead"></thead>
@@ -2126,8 +2957,27 @@ def main():
     else:
         print('WARNING: guild_sprite.svg not found, guild building/shrine icons will be missing')
 
-    # Combine: skill icons, equipment icons, buff icons, guild icons
-    all_symbols = skill_symbols + equip_symbols + buff_symbols + guild_symbols
+    # Read house_sprite.svg for the 17 house-room icons
+    house_sprite_path = os.path.join(BASE_DIR, 'house_sprite.svg')
+    house_symbols = []
+    _hr = GAME_DATA.get('houseRoom', {}) or {}
+    _house_ids = [d.get('icon') for d in _hr.get('defs', [])]
+    _house_ids = [x for x in _house_ids if x]
+    if os.path.exists(house_sprite_path):
+        with open(house_sprite_path, 'r', encoding='utf-8') as f:
+            house_content = f.read()
+        for hid in _house_ids:
+            sym = extract_symbol(house_content, hid)
+            if sym:
+                house_symbols.append(sym)
+            else:
+                print(f'  WARNING: house symbol not found: {hid}')
+        print(f'House icons: {len(house_symbols)} (rooms)')
+    else:
+        print('WARNING: house_sprite.svg not found, house room icons will be missing')
+
+    # Combine: skill icons, equipment icons, buff icons, guild icons, house icons
+    all_symbols = skill_symbols + equip_symbols + buff_symbols + guild_symbols + house_symbols
     svg_block = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="display:none">\n' + '\n'.join(all_symbols) + '\n</svg>'
 
     # Build EQUIP_ICONS JS
@@ -2185,11 +3035,83 @@ def main():
         # 个人神龛增益键：/guild_buffs/<shrine>_skilling（成员数据里的 guildBuffLevelMap 用的就是这个键）
         game_data_lines.append('const GUILD_SHRINE_BUFF_HRIDS = %s;' % json.dumps(
             {s.get('key'): s.get('buffHrid') for s in gsd.get('defs', [])}, ensure_ascii=False))
+        # 成就档位（成员级个人数据，逐成员可编辑，随共享数据上传）
+        game_data_lines.append('const ACHIEVEMENT_TIERS = %s;' % json.dumps(gd.get('achievementTiers', []), ensure_ascii=False))
+        # 个人神龛槽位（5 座 × 生活/战斗 = 10，扁平化后供 JS 直接遍历）
+        _shrines = gsd.get('defs', [])
+        _slots = []
+        for _sd in _shrines:
+            for _v in _sd.get('variants', []):
+                _slot = dict(_v)
+                _slot['shrine'] = _sd.get('key')
+                _slot['icon'] = _sd.get('icon')
+                _slots.append(_slot)
+        game_data_lines.append('const GUILD_SHRINE_SLOTS = %s;' % json.dumps(_slots, ensure_ascii=False))
+        # 房屋房间（成员级个人持久化数据，17 个：10 生活 + 7 战斗）
+        _hrd = gd.get('houseRoom', {}) or {}
+        game_data_lines.append('const HOUSE_ROOM_MAX_LEVEL = %s;' % json.dumps(_hrd.get('maxLevel', 20)))
+        game_data_lines.append('const HOUSE_ROOM_KEYS = %s;' % json.dumps(_hrd.get('keys', []), ensure_ascii=False))
+        game_data_lines.append('const HOUSE_ROOM_SKILLING_KEYS = %s;' % json.dumps(_hrd.get('skillingKeys', []), ensure_ascii=False))
+        game_data_lines.append('const HOUSE_ROOM_COMBAT_KEYS = %s;' % json.dumps(_hrd.get('combatKeys', []), ensure_ascii=False))
+        game_data_lines.append('const HOUSE_ROOM_ICONS = %s;' % json.dumps(_hrd.get('icons', {}), ensure_ascii=False))
+        game_data_lines.append('const HOUSE_ROOM_DEFS = %s;' % json.dumps(_hrd.get('defs', []), ensure_ascii=False))
         game_data_lines.append('const EMBEDDED_CLIENT_DATA = %s;' % json.dumps(gd.get('embeddedClientData', {}), ensure_ascii=False))
     game_data_js = '\n'.join(game_data_lines)
 
+    # 装备「家族」表（生活装备『勾选制』区域用）：
+    #   - 命中「装备基础加成表」= 生活件（只有生活技能加成、没有战斗加成）
+    #   - 同一基础款若存在「★」条目（如 采集者披风 / 采集者披风 ★）→ 折叠成一个家族，refined=true
+    #     （游戏里普通款与精炼款互斥，只能穿一件 → 界面上是一个勾选 + 一个 ★ 开关）
+    #   - 勾选制槽位：上衣(身体)/下装(腿部)/披风(背部)/头部/手部/脚部/副手（只列生活件）。
+    #     这些槽位里的物品互不替代（挤奶工 vs 伐木工…），所以按「拥有一批、推演时择优」录入。
+    #   - 两用槽位 项链/耳环/戒指/袋子（同一槽位既有生活件也有战斗件）**不在此列**：
+    #     它们与生活工具一样是「一槽一件」的上下位替代 → 走配装选择器（openEquipPicker）录入。
+    _eb_keys = set((gd.get('equipmentBaseBonuses') or {}).keys()) if gd else set()
+
+    def _is_life_icon(bid):
+        return ('/items/' + bid) in _eb_keys
+
+    _owned_slots = ['身体', '腿部', '背部', '头部', '手部', '脚部', '副手']
+    _hybrid_slots = ['项链', '耳环', '戒指', '袋子']
+
+    # 先按槽位建立「基础款 iconId → 家族」表（★ 条目折叠到基础款）
+    _fam_all = {}
+    for _raw_slot, _names in equip_data.items():
+        _slot = '主手' if _raw_slot == '双手' else _raw_slot
+        _lst = _fam_all.setdefault(_slot, [])
+        _by_id = {_f['id']: _f for _f in _lst}
+        for _nm in _names:
+            _refined = _nm.endswith(' ★')
+            _base_name = _nm[:-2] if _refined else _nm
+            _bid = ITEM_NAME_MAP.get(_base_name)
+            if not _bid:
+                continue
+            _f = _by_id.get(_bid)
+            if _f is None:
+                _f = {'id': _bid, 'name': _base_name, 'refined': _refined, 'life': _is_life_icon(_bid)}
+                _lst.append(_f)
+                _by_id[_bid] = _f
+            elif _refined:
+                _f['refined'] = True
+
+    _equip_families = {}
+    for _slot in _owned_slots:
+        _all = _fam_all.get(_slot, [])
+        _sel = [_f for _f in _all if _f['life']]
+        _equip_families[_slot] = _sel
+        print('Equip families [%s]: %d (life=%d)'
+              % (_slot, len(_sel), len([_f for _f in _sel if _f['life']])))
+
+    life_equip_lines = [
+        'const EQUIP_FAMILIES = %s;' % json.dumps(_equip_families, ensure_ascii=False),
+        'const OWNED_SLOTS = %s;' % json.dumps(_owned_slots, ensure_ascii=False),
+        'const HYBRID_SLOTS = %s;' % json.dumps(_hybrid_slots, ensure_ascii=False),
+    ]
+    life_equip_js = '\n'.join(life_equip_lines)
+
     # Replace placeholders
     js_filled = JS.replace('// __EQUIP_ICONS_PLACEHOLDER__', equip_icons_js)
+    js_filled = js_filled.replace('// __LIFE_EQUIP_PLACEHOLDER__', life_equip_js)
     js_filled = js_filled.replace('// __GAME_DATA_PLACEHOLDER__', game_data_js)
     html_filled = HTML.replace('__CSS__', CSS).replace('__SVG_SYMBOLS__', svg_block).replace('__JS__', js_filled)
 
