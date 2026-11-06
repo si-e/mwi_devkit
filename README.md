@@ -18,7 +18,8 @@ mwi_devkit/
 ├── equip.json                    # 权威槽位→中文装备名列表（生成 EQUIP_ICONS / EQUIP_FAMILIES 用；含「★」精炼款）
 ├── item_name_map.json            # 中文名→iconId 映射（生成图标用）
 ├── mwi_data.json                 # 游戏数据（装备加成表/房屋/成就/公会建筑/神龛，构建期内联）
-└── mwi_data_export.user.js       # 油猴导出脚本（v0.9.0，源文件）
+├── mwi_data_export.user.js       # 油猴导出脚本（v0.9.0，源文件）
+└── .github/workflows/deploy.yml  # CI：构建并自动提交产物到 si-e.github.io/mwi
 ```
 说明：
 - `mwi_trial_calculator.html`（计算器成品）由 `generate_html.py` 生成，**不纳入本包**；用本包可随时重新生成，避免与源素材重复。
@@ -117,6 +118,21 @@ mwi_devkit/
 - 生成计算器：在包根目录运行 `python generate_html.py`，读取 `items.svg`、`skills_sprite.svg`、`buffs_sprite.svg`、`guild_sprite.svg`、`house_sprite.svg`、`equip.json`、`item_name_map.json`、`mwi_data.json`，输出 `mwi_trial_calculator.html`（单文件，可直接浏览器打开）。
 - 导出脚本：直接在 `mwi_data_export.user.js` 修改即可（v0.9.0，约 1000 行）。按油猴脚本规范发布，`@match` 已在文件头定义。
 - 如需重新生成 `item_name_map.json`（中文名→iconId），原始数据来自游戏本地化 chunk，解析脚本为 `parse_zh_items.py`（未纳入本包，仅说明来源）。
+
+### 自动部署（GitHub Actions）
+`.github/workflows/deploy.yml`：每次推送到 `master`/`main`（或手动 Run workflow），自动完成 **构建 → 校验 → 提交产物到站点仓库**：
+
+```
+push → python generate_html.py → 校验产物完整性/体积 → 克隆 si-e/si-e.github.io
+     → 写 mwi/index.html + mwi/mwi_data_export.user.js → commit & push（只改 mwi/）
+```
+
+- 产物地址：`https://si-e.github.io/mwi/`（入口 `mwi/index.html`）；导出脚本 `mwi_data_export.user.js` 与页面相对引用保持一致。
+- 只改动目标仓库的 `mwi/` 目录，站点其它文件原样保留；**产物无变化时不会产生空提交**；目标仓库有新提交时自动 `rebase` 重试（最多 3 次）。
+- 构建前置校验：产物必须生成、体积 > 1MB、且不含 `__CSS__` / `__JS__` / `__SVG_SYMBOLS__` 残留占位符，否则 job 直接失败（不会把坏产物推上线）。
+- 产物同时以 Artifact 形式上传到 Actions 页面（保留 7 天），方便排查。
+
+**一次性配置**：在 `si-e/mwi_devkit` → Settings → Secrets and variables → Actions 新建 Secret **`DEPLOY_TOKEN`**，值为一个对 `si-e.github.io` 有 **Contents: Read and write** 权限的 PAT（fine-grained PAT 只需勾这一个仓库的 Contents 读写；classic PAT 需 `repo` 权限）。缺这个 Secret 时 job 会以明确报错终止。
 
 ## 七、现状要点与边界
 - 当前版本：计算器 2026-11-06 版（**v6.12.2**：① **未分配成员面板**作为试炼卡片行的**第 5 块窄列**（200px，与 4 卡同排，不再另起一行；无未分配时整块隐藏、卡片恢复等宽），只列名字；② 计算汇总（总最终等级 / 总通关 / 已分配 / 未分配）挪到**「试炼配置」标题行右侧**，不再沉底；③ 试炼 / 专业 / 分配列的技能图标统一加 `--icon-tile` 底色（浅色主题 14% 黑、暗色主题 12% 白），纯白图标（制作等）不再看不清）。v6.12.1：导入报告精简、保留名单可悬停删除（二次确认 + 墓碑 + 覆盖 bin）。v6.12：导入报告弹窗 + 两种导入统一**字段级并集合并**（空配置不再覆盖本地已有配置）+ 试炼卡内人员列表按该试炼技能等级**降序**。上一版 v6.11：成员表新增 **「主力专业」+「主手」两列速览**。更早 v6.10：导入「游戏成员 profile 数组」由整体替换改为按角色名合并；v6.9：「导出」按钮 + 导入格式自动识别；v6.8：生活装备方格化、★ 移到 +N 左边。导出脚本 **v0.9.0**（页面按钮合并为「开始采集公会成员」一个、采集完自动导出、只在公会成员页显示、待机不再显示「已缓存 N 人」）。

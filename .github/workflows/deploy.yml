@@ -1,0 +1,106 @@
+name: Build & Deploy to si-e.github.io/mwi
+
+# 构建 mwi_trial_calculator.html，并把产物提交到另一个仓库：
+#   https://github.com/si-e/si-e.github.io  →  main 分支的 mwi/ 目录
+# 目标站点： https://si-e.github.io/mwi/
+#
+# 只需改动 mwi/ 目录（root 的 index.html、其它目录原样保留）；
+# 产物无变化时不产生空提交；远端有新提交时自动 rebase 重试。
+#
+# 需要在 si-e/mwi_devkit 仓库配置 Secret：DEPLOY_TOKEN
+#   （对 si-e.github.io 有 Contents: Read and write 权限的 PAT，见 README「自动部署」）
+
+on:
+  push:
+    branches: [master, main]
+  workflow_dispatch: # 也可在 Actions 页面手动触发
+
+concurrency:
+  group: deploy-mwi
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Build single-file HTML
+        run: python generate_html.py
+
+      - name: Sanity check artifact
+        run: |
+          set -e
+          test -f mwi_trial_calculator.html || { echo "::error::产物 mwi_trial_calculator.html 未生成"; exit 1; }
+          size=$(wc -c < mwi_trial_calculator.html)
+          echo "artifact size: ${size} bytes"
+          # 占位符没被替换 = 构建不完整，直接失败
+          if grep -q "__CSS__\|__JS__\|__SVG_SYMBOLS__" mwi_trial_calculator.html; then
+            echo "::error::产物里仍有未替换的占位符，构建不完整"; exit 1
+          fi
+          if [ "$size" -lt 1000000 ]; then
+            echo "::error::产物体积异常（<1MB），疑似构建失败"; exit 1
+          fi
+
+      - name: Upload artifact (debug)
+        uses: actions/upload-artifact@v4
+        with:
+          name: mwi_trial_calculator
+          path: mwi_trial_calculator.html
+          retention-days: 7
+
+      - name: Push artifact to si-e.github.io/mwi
+        env:
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+          SRC_SHA: ${{ github.sha }}
+          SRC_MSG: ${{ github.event.head_commit.message }}
+        run: |
+          set -e
+          if [ -z "$DEPLOY_TOKEN" ]; then
+            echo "::error::缺少 Secret DEPLOY_TOKEN（见 README「自动部署」）"; exit 1
+          fi
+
+          # 浅克隆目标站点仓库，只改动 mwi/ 目录
+          rm -rf _site
+          git clone --depth 1 --branch main \
+            "https://x-access-token:${DEPLOY_TOKEN}@github.com/si-e/si-e.github.io.git" _site
+          cd _site
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          mkdir -p mwi
+          # /mwi/ 入口用 index.html；导出脚本被页面以相对路径引用，必须一起放进去
+          cp ../mwi_trial_calculator.html mwi/index.html
+          cp ../mwi_data_export.user.js mwi/mwi_data_export.user.js
+
+          git add mwi
+          if git diff --cached --quiet; then
+            echo "产物无变化，跳过提交"
+            exit 0
+          fi
+
+          SHORT_SHA=$(echo "$SRC_SHA" | cut -c1-7)
+          FIRST_LINE=$(echo "$SRC_MSG" | head -n1)
+          git commit -m "chore(mwi): 同步构建产物（mwi_devkit@${SHORT_SHA}）" \
+                     -m "${FIRST_LINE:-自动构建}" \
+                     -m "由 GitHub Actions 自动生成，构建时间 $(TZ=Asia/Shanghai date '+%Y-%m-%d %H:%M %Z')"
+
+          # 目标仓库可能有其它来源的提交 → 冲突时 rebase 后重试
+          for i in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "已推送到 si-e.github.io/mwi"
+              exit 0
+            fi
+            echo "第 $i 次推送失败，rebase 后重试..."
+            git pull --rebase origin main
+          done
+          echo "::error::推送到 si-e.github.io 失败"; exit 1
