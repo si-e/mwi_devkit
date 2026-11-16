@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MWI 试炼计算器</title>
+<style>
+__CSS__
+</style>
+</head>
+<body>
+__SVG_SYMBOLS__
+
+<div class="header">
+  <div class="header-left">
+    <h1 id="h1-title">MWI 试炼计算器</h1>
+    <span class="connection-status" id="conn-status">离线模式</span>
+  </div>
+  <div class="header-right">
+    <button class="btn btn-icon" id="btn-lang" onclick="toggleLang()">中/EN</button>
+    <button class="btn btn-icon" id="btn-theme" onclick="toggleTheme()" title="切换深色 / 浅色主题">🌙</button>
+    <button class="btn" id="btn-refresh" onclick="refreshFromServer()" style="display:none">🔄</button>
+    <button class="btn" id="btn-share" onclick="openShareDialog()">共享设置</button>
+    <button class="btn" id="btn-import-json" onclick="importJson()">导入</button>
+    <button class="btn" id="btn-export-json" onclick="exportJson()">导出</button>
+    <a href="mwi_data_export.user.js" download class="btn btn-sm" id="export-script-link" style="font-size:12px;padding:4px 8px;opacity:.6" title="">📦</a>
+    <button class="btn btn-primary" id="btn-calculate" onclick="calculate()">计算最优分配</button>
+  </div>
+</div>
+
+<div class="global-buff-section">
+  <h3 id="h3-global-buff">全局加成 <span class="global-buff-hint" id="global-buff-hint" title=""></span></h3>
+  <div class="global-buff-bar">
+    <label class="global-buff-item" title="">
+      <svg class="global-buff-icon" viewBox="0 0 40 40"><use xlink:href="#gathering"></use></svg>
+      <span class="global-buff-label" id="gb-lbl-gathering">采集数量</span>
+      <input type="number" min="0" max="20" step="1" id="gb-input-gathering" onchange="updateGlobalBuff('gathering', this.value)">
+      <span class="global-buff-unit" id="gb-unit-gathering">级</span>
+    </label>
+    <label class="global-buff-item" title="">
+      <svg class="global-buff-icon" viewBox="0 0 40 40"><use xlink:href="#efficiency"></use></svg>
+      <span class="global-buff-label" id="gb-lbl-production">生产效率</span>
+      <input type="number" min="0" max="20" step="1" id="gb-input-production" onchange="updateGlobalBuff('production', this.value)">
+      <span class="global-buff-unit" id="gb-unit-production">级</span>
+    </label>
+    <label class="global-buff-item" title="">
+      <svg class="global-buff-icon" viewBox="0 0 40 40"><use xlink:href="#action_speed"></use></svg>
+      <span class="global-buff-label" id="gb-lbl-enhancingSpeed">强化速度</span>
+      <input type="number" min="0" max="20" step="1" id="gb-input-enhancingSpeed" onchange="updateGlobalBuff('enhancingSpeed', this.value)">
+      <span class="global-buff-unit" id="gb-unit-enhancingSpeed">级</span>
+    </label>
+  </div>
+  <h3 id="h3-guild-buildings">公会建筑 <span class="global-buff-hint" id="guild-buildings-hint" title=""></span> <span class="global-buff-subhint" id="guild-buildings-shared"></span></h3>
+  <div class="global-buff-bar is-stacked" id="guild-buildings-bar"></div>
+</div>
+
+<div class="trial-section">
+  <div class="trial-head">
+    <h2 id="h2-trial">试炼配置</h2>
+    <div class="summary-bar" id="summary-bar"></div>
+  </div>
+  <div class="trial-cards" id="trial-cards"></div>
+</div>
+
+<div class="member-section">
+  <h2 id="h2-member">成员数据 <span class="global-buff-hint" id="member-hint" title=""></span> <button class="btn btn-sm" id="btn-add-member" onclick="addMember()">+ 添加成员</button></h2>
+  <div class="table-wrap">
+    <table class="member-table">
+      <thead id="member-thead"></thead>
+      <tbody id="member-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+__JS__
+</script>
+</body>
+</html>

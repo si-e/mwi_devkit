@@ -9,23 +9,30 @@
 ```
 mwi_devkit/
 ├── README.md
-├── generate_html.py              # 从素材生成计算器网页（单文件 HTML）
-├── items.svg                     # 装备图标源（960 个 SVG symbol）
-├── skills_sprite.svg             # 17 个纯技能图标（来自游戏 CDN）
-├── buffs_sprite.svg              # 全局 BUFF 图标（gathering/efficiency/action_speed，来自游戏 CDN）
-├── guild_sprite.svg              # 公会建筑/神龛图标（23 建筑 + 5 神龛，来自游戏 misc_sprite）
-├── house_sprite.svg              # 17 个房屋房间图标（house_*，来自游戏 misc_sprite）
-├── equip.json                    # 权威槽位→中文装备名列表（生成 EQUIP_ICONS / EQUIP_FAMILIES 用；含「★」精炼款）
-├── item_name_map.json            # 中文名→iconId 映射（生成图标用）
-├── mwi_data.json                 # 游戏数据（装备加成表/房屋/成就/公会建筑/神龛，构建期内联）
+├── generate_html.py              # 构建脚本：读 src/ 与资源 → 生成单文件 HTML
+├── src/                          # 前端源码（构建时内联进单文件）
+│   ├── index.html                # 页面骨架（含 __CSS__ / __JS__ / __SVG_SYMBOLS__ 占位）
+│   ├── styles.css                # 全部样式
+│   └── app.js                    # 全部前端逻辑（含 3 个数据占位注释）
+├── assets/                       # 构建素材（SVG 图标源 + 数据 JSON）
+│   ├── items.svg                 # 装备图标源（960 个 SVG symbol）
+│   ├── skills_sprite.svg         # 17 个纯技能图标（来自游戏 CDN）
+│   ├── buffs_sprite.svg          # 全局 BUFF 图标（gathering/efficiency/action_speed，来自游戏 CDN）
+│   ├── guild_sprite.svg          # 公会建筑/神龛图标（23 建筑 + 5 神龛，来自游戏 misc_sprite）
+│   ├── house_sprite.svg          # 17 个房屋房间图标（house_*，来自游戏 misc_sprite）
+│   ├── equip.json                # 权威槽位→中文装备名列表（生成 EQUIP_ICONS / EQUIP_FAMILIES 用；含「★」精炼款）
+│   ├── item_name_map.json        # 中文名→iconId 映射（生成图标用）
+│   └── mwi_data.json             # 游戏数据（装备加成表/房屋/成就/公会建筑/神龛，构建期内联）
 ├── mwi_data_export.user.js       # 油猴导出脚本（源文件）
 ├── docs/                         # 官网「新闻 / 更新日志 / 游戏指南」正文存档（规则与数值参考）
 └── .github/workflows/deploy.yml  # CI：构建并自动提交产物到 si-e.github.io/mwi
 ```
 说明：
 - `mwi_trial_calculator.html`（计算器成品）由 `generate_html.py` 生成，**不纳入本包**；用本包可随时重新生成，避免与源素材重复。
+- CSS / JS / HTML 在 `src/` 下独立维护：`generate_html.py` 只负责读取它们、注入游戏数据与 SVG symbol、替换占位符，产物仍是单文件。改样式改 `src/styles.css`，改逻辑改 `src/app.js`；直接改产物会被下次构建覆盖。
+- `src/app.js` 里的三行数据占位注释（`// __EQUIP_ICONS_PLACEHOLDER__`、`// __LIFE_EQUIP_PLACEHOLDER__`、`// __GAME_DATA_PLACEHOLDER__`）是构建注入点，不要删除。
 - `skill_icons.svg` 等中间产物均由 `items.svg` 派生，无需单独保留，生成方式内置于 `generate_html.py`。
-- `generate_html.py` 从包根目录直接读取 `equip.json`、`item_name_map.json`。
+- `generate_html.py` 从 `assets/` 读取 `equip.json`、`item_name_map.json` 及各 SVG。
 
 ## 三、两大组件
 
@@ -69,7 +76,7 @@ mwi_devkit/
   - 7 个战斗房间（射箭场/军械库/餐厅/道场/健身房/图书馆/神秘研究室）分别加 远程/防御/耐力/攻击/近战/智力/魔法 等级或攻速，置灰标注「仅影响战斗试炼（暂未模拟）」，进 `computeCombatBonuses()`。
   - 所有房间另有全局 +0.5%/级 经验、+0.2%/级 稀有掉率（不影响推演指标）。
   - 导入时从 profile 的 `characterHouseRoomMap`（`{"/house_rooms/x": {level}}`）物化；同时兼容 `houseRoomLevels` / `houseActionTypeBuffsDict` 字段。
-- 图标：内联 **492** 个 SVG（17 技能 + 427 装备 + 3 全局 BUFF + 23 公会建筑 + 5 神龛 + **17 房屋**），来自 `skills_sprite.svg`、`items.svg`、`buffs_sprite.svg`、`guild_sprite.svg`、`house_sprite.svg`；装备图标经 `equip.json` + `item_name_map.json` 映射生成，无后缀猜测。
+- 图标：内联 **492** 个 SVG（17 技能 + 427 装备 + 3 全局 BUFF + 23 公会建筑 + 5 神龛 + **17 房屋**），来自 `assets/` 下的 `skills_sprite.svg`、`items.svg`、`buffs_sprite.svg`、`guild_sprite.svg`、`house_sprite.svg`；装备图标经 `equip.json` + `item_name_map.json` 映射生成，无后缀猜测。
 - 成员表列数 **6**：分配 1 + 角色名 1 + **主力专业 1** + **主手 1** + 详情 1 + 删除 1；专业 10 + 装备 **28 个生活装备方格** + **22 个配装选择器**（10 生活工具 + 8 战斗配装槽 + 4 两用槽）+ 房屋 17 + 神龛 10 + 成就 6 共 **全部在详情弹窗内**（弹窗区块顺序：专业 → 装备 → 房屋 → 神龛 → 成就完成）。
 - **成员表两列速览**：主表空旷时一眼看清「这个人强在哪、带什么家伙」。
   - **主力专业**：该成员**等级最高的 3 个专业**（等级 0 不列出、全 0 显示 `-`），每项 = **技能图标 + 等级 + 该专业当前使用的工具图标**（无工具时显示虚线空心框）；名称与强化等级放 tooltip。等级相同时按技能顺序稳定排序；技能 → 工具槽位由 `SKILL_TOOL_SLOT`（`TOOL_SKILL_MAP` 反查）得到。
@@ -125,7 +132,8 @@ mwi_devkit/
 - 无 URL 参数时走 localStorage 离线模式。
 
 ## 六、构建与二次开发
-- 生成计算器：在包根目录运行 `python generate_html.py`，读取 `items.svg`、`skills_sprite.svg`、`buffs_sprite.svg`、`guild_sprite.svg`、`house_sprite.svg`、`equip.json`、`item_name_map.json`、`mwi_data.json`，输出 `mwi_trial_calculator.html`（单文件，可直接浏览器打开）。
+- 生成计算器：在包根目录运行 `python generate_html.py`。脚本读取 `src/index.html`、`src/styles.css`、`src/app.js`，以及 `assets/` 下的 `items.svg`、`skills_sprite.svg`、`buffs_sprite.svg`、`guild_sprite.svg`、`house_sprite.svg`、`equip.json`、`item_name_map.json`、`mwi_data.json`，注入数据后输出 `mwi_trial_calculator.html`（单文件，可直接浏览器打开）。
+- 前端源码在 `src/` 下按 CSS / JS / HTML 分开维护；`src/app.js` 可单独校验：`node --check src/app.js`。
 - 导出脚本：直接在 `mwi_data_export.user.js` 修改即可（约 1000 行）。按油猴脚本规范发布，`@match` 已在文件头定义。
 - 如需重新生成 `item_name_map.json`（中文名→iconId），原始数据来自游戏本地化 chunk，解析脚本为 `parse_zh_items.py`（未纳入本包，仅说明来源）。
 

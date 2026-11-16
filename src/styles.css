@@ -1,0 +1,328 @@
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg:#f5f5f5; --surface:#fff; --border:#ddd; --text:#333; --text-muted:#666; --text-faint:#999;
+  --header-bg:#fff; --hover:#f0f0f0; --accent:#4a90d9; --accent-hover:#3a7bc8;
+  --table-header:#f8f8f8; --table-hover:#f9f9f9; --input-bg:#fff; --shadow:rgba(0,0,0,.15);
+  --modal-bg:#fff; --modal-overlay:rgba(0,0,0,.4); --list-bg:#fafafa; --list-border:#eee;
+  --scrollbar-thumb:#ccc; --scrollbar-track:#f0f0f0;
+  --assign-t1-bg:#e3f2fd; --assign-t1-fg:#1565c0;
+  --assign-t2-bg:#e8f5e9; --assign-t2-fg:#2e7d32;
+  --assign-t3-bg:#fff3e0; --assign-t3-fg:#e65100;
+  --assign-t4-bg:#fce4ec; --assign-t4-fg:#c62828;
+  --enhance-badge-bg:rgba(0,0,0,0.7); --enhance-badge-fg:#ffd700;
+  --equip-hover:#f0f7ff; --icon-name-bg:#333; --icon-name-fg:#fff;
+  --enhance-sel-bg:#4a90d9; --enhance-sel-fg:#fff;
+  --conn-bg:#f0f0f0; --danger:#d9534f; --search-border:#ccc;
+  --icon-tile:rgba(0,0,0,.14);
+}
+[data-theme="dark"] {
+  --bg:#1a1a2e; --surface:#16213e; --border:#30475e; --text:#e0e0e0; --text-muted:#a0a0a0; --text-faint:#666;
+  --header-bg:#16213e; --hover:#1a1a2e; --accent:#4a90d9; --accent-hover:#5a9fe8;
+  --table-header:#1a1a2e; --table-hover:#1e2746; --input-bg:#1a1a2e; --shadow:rgba(0,0,0,.4);
+  --modal-bg:#16213e; --modal-overlay:rgba(0,0,0,.6); --list-bg:#0f1623; --list-border:#30475e;
+  --scrollbar-thumb:#30475e; --scrollbar-track:#0f1623;
+  --assign-t1-bg:#0d2538; --assign-t1-fg:#64b5f6;
+  --assign-t2-bg:#0d2e1d; --assign-t2-fg:#66bb6a;
+  --assign-t3-bg:#3e2510; --assign-t3-fg:#ffa726;
+  --assign-t4-bg:#3e0d1e; --assign-t4-fg:#ef5350;
+  --enhance-badge-bg:rgba(255,255,255,0.85); --enhance-badge-fg:#b8860b;
+  --equip-hover:#1a2744; --icon-name-bg:#e0e0e0; --icon-name-fg:#16213e;
+  --enhance-sel-bg:#4a90d9; --enhance-sel-fg:#fff;
+  --conn-bg:#0f1623; --danger:#ef5350; --search-border:#30475e;
+  --icon-tile:rgba(255,255,255,.12);
+}
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); font-size:14px; transition:background .2s,color .2s; }
+h1 { font-size:20px; }
+h2 { font-size:16px; margin:10px 0 8px; color:var(--text-muted); }
+
+/* Header */
+.header { background:var(--header-bg); padding:10px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; position:sticky; top:0; z-index:100; }
+.header-left { display:flex; align-items:center; gap:10px; }
+.header-right { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+.btn { padding:6px 14px; border:1px solid var(--border); border-radius:4px; background:var(--surface); color:var(--text); cursor:pointer; font-size:13px; transition:all .15s; }
+.btn:hover { background:var(--hover); border-color:var(--text-muted); }
+.btn-primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+.btn-primary:hover { background:var(--accent-hover); }
+.btn-danger { color:var(--danger); }
+.btn-sm { padding:3px 8px; font-size:12px; }
+.btn-icon { padding:6px 10px; font-size:16px; line-height:1; }
+.connection-status { font-size:12px; color:var(--text-muted); padding:2px 8px; border-radius:3px; background:var(--conn-bg); }
+
+/* Global Buff */
+.global-buff-section { padding:8px 20px 0 20px; }
+.global-buff-section h3 { font-size:13px; font-weight:600; margin:0 0 6px 0; color:var(--text-muted); display:flex; align-items:center; gap:6px; }
+.global-buff-hint { font-size:11px; color:var(--text-faint); font-weight:400; cursor:help; }
+.global-buff-hint::before { content:'ℹ'; display:inline-block; width:14px; height:14px; line-height:14px; text-align:center; border:1px solid var(--border); border-radius:50%; }
+.global-buff-bar { display:flex; flex-wrap:wrap; gap:14px; align-items:center; }
+/* 公会建筑栏：三块（功能/生活/战斗）各占一行 */
+.global-buff-bar.is-stacked { flex-direction:column; gap:8px; align-items:stretch; }
+/* 三块（功能/生活类/战斗类）各自占一行；行内是「每行最多 5 个」的等宽网格
+   —— 等宽列让字数不同的建筑名也自动按最宽的那一列对齐 */
+.global-buff-row { display:flex; align-items:flex-start; gap:10px; }
+.global-buff-grid { flex:1; min-width:0; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px 10px; }
+@media(max-width:1100px){ .global-buff-grid { grid-template-columns:repeat(4,minmax(0,1fr)); } }
+@media(max-width:860px){ .global-buff-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+@media(max-width:640px){ .global-buff-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+.global-buff-item { display:flex; align-items:center; gap:6px; min-width:0; padding:4px 10px; border:1px solid var(--border); border-radius:4px; background:var(--conn-bg); font-size:12px; color:var(--text); cursor:pointer; }
+/* 网格里标签占满剩余宽度 → 等级输入框右对齐（不同字数也能对齐） */
+.global-buff-grid .global-buff-label { flex:1; min-width:0; word-break:break-word; }
+.global-buff-item .global-buff-icon { width:18px; height:18px; flex:0 0 auto; vertical-align:middle; }
+.global-buff-item input { width:48px; padding:2px 6px; border:1px solid var(--border); border-radius:3px; background:var(--input-bg); color:var(--text); font-size:12px; text-align:center; }
+.global-buff-item input:focus { outline:none; border-color:var(--accent); }
+.global-buff-item .global-buff-unit { color:var(--text-faint); font-size:11px; }
+.global-buff-item.is-utility { opacity:.85; }
+.global-buff-item.is-inactive { opacity:.55; }
+.global-buff-item.is-inactive .global-buff-label { text-decoration:line-through; }
+.global-buff-item.is-life { border-color:var(--border); }
+.global-buff-item.is-combat { opacity:.8; }
+.global-buff-tag { font-size:10px; line-height:1; color:var(--accent); border:1px solid var(--accent); border-radius:3px; padding:2px 4px; }
+.global-buff-group-label { font-size:11px; color:var(--text-faint); flex:0 0 auto; width:64px; padding-top:6px; text-align:right; }
+.global-buff-subhint { font-size:11px; font-weight:400; color:var(--text-faint); }
+
+/* Trial Config */
+.trial-section { padding:10px 20px; }
+.trial-head { display:flex; align-items:baseline; gap:16px; flex-wrap:wrap; margin:10px 0 8px; }
+.trial-head h2 { margin:0; }
+.trial-cards { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+/* 「未分配成员」与 4 张试炼卡同一行，作为较窄的第 5 块（卡片宽度只略微变窄） */
+.trial-cards.has-unassigned { grid-template-columns:repeat(4,minmax(0,1fr)) 200px; }
+@media(max-width:1280px){
+  .trial-cards.has-unassigned { grid-template-columns:repeat(4,minmax(0,1fr)); }
+  .trial-cards.has-unassigned .unassigned-panel { grid-column:1/-1; }
+}
+@media(max-width:1000px){ .trial-cards, .trial-cards.has-unassigned{grid-template-columns:repeat(2,minmax(0,1fr));} }
+@media(max-width:600px){ .trial-cards, .trial-cards.has-unassigned{grid-template-columns:1fr;} }
+.trial-card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:8px; }
+.trial-card-header { display:flex; align-items:center; gap:8px; }
+.trial-skill-icon { width:40px; height:40px; cursor:pointer; border:2px solid transparent; border-radius:6px; transition:border-color .15s; background:var(--icon-tile); }
+.trial-skill-icon:hover { border-color:var(--accent); }
+.trial-skill-icon svg { width:100%; height:100%; }
+.trial-card-info { flex:1; }
+.trial-card-title { font-size:14px; font-weight:600; }
+.trial-skill-name { font-size:12px; color:var(--text-muted); }
+.trial-max-row { display:flex; align-items:center; gap:6px; font-size:12px; }
+.trial-max-row input { width:50px; padding:2px 4px; border:1px solid var(--border); border-radius:3px; font-size:12px; background:var(--input-bg); color:var(--text); }
+.trial-max-value { font-weight:600; color:var(--text); }
+.trial-max-hint { font-size:10px; color:var(--text-faint); border:1px solid var(--border); border-radius:3px; padding:1px 4px; }
+.trial-member-list { max-height:100px; overflow-y:auto; border:1px solid var(--list-border); border-radius:4px; padding:4px; background:var(--list-bg); font-size:12px; }
+.trial-member-list:empty::after { content:attr(data-empty); color:var(--text-faint); display:block; text-align:center; padding:10px; }
+/* 试炼成员列表（有表头）：成员 / 等级 / 工作量；表头固定，只有行列表滚动 */
+.trial-member-list.has-head { display:flex; flex-direction:column; max-height:none; overflow:hidden; padding:0; }
+.tml-head, .tml-row { display:grid; grid-template-columns:minmax(0,1fr) 40px 64px; align-items:center; gap:4px; }
+.tml-head { padding:3px 6px; font-size:10px; font-weight:600; color:var(--text-faint); border-bottom:1px solid var(--list-border); background:var(--table-header); }
+.tml-head .ml { color:var(--text-faint); }
+.tml-head .tml-lv, .tml-head .tml-work { text-align:right; }
+.tml-body { overflow-y:auto; max-height:96px; padding:2px 4px; }
+.tml-row { padding:2px 2px; border-radius:3px; }
+.tml-row:hover { background:var(--hover); }
+.tml-row .ml { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-muted); }
+.tml-row .tml-lv { text-align:right; color:var(--text-faint); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.tml-row .tml-work { text-align:right; color:var(--accent); font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.trial-member-item { padding:2px 6px; border-radius:3px; display:flex; justify-content:space-between; }
+.trial-member-item:hover { background:var(--hover); }
+.trial-member-item .ml { color:var(--text-muted); }
+.trial-member-item .mr { color:var(--text-faint); }
+.trial-result { font-size:11px; font-weight:600; color:var(--accent); padding-top:4px; border-top:1px solid var(--list-border); line-height:1.5; }
+/* 逐阶段时间表（100 → 当前最终等级，每 10 级一行）：表头固定在外，只有行列表滚动 */
+.trial-stages { border-top:1px dashed var(--list-border); padding-top:4px; font-size:11px; }
+.tstage-body { max-height:104px; overflow-y:auto; }
+.tstage { display:flex; align-items:center; gap:6px; padding:1px 2px; border-radius:3px; color:var(--text-muted); }
+.tstage-body .tstage:nth-child(even) { background:var(--list-bg); }
+.tstage-lv { flex:none; width:46px; font-weight:600; color:var(--text); }
+.tstage-t { flex:1 1 0; min-width:0; white-space:nowrap; color:var(--text-muted); }
+.tstage.is-over { opacity:.5; }
+.tstage-head { color:var(--text-faint); font-size:10px; padding-bottom:2px; border-bottom:1px solid var(--list-border); margin-bottom:2px; }
+.tstage-head .tstage-lv { color:var(--text-faint); font-weight:600; }
+.tstage-head .tstage-t { color:var(--text-faint); }
+
+/* 未分配成员（与试炼卡同排的窄块；名单样式与试炼卡里的成员列表一致） */
+.unassigned-panel { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:8px; min-width:0; }
+.unassigned-head { display:flex; flex-direction:column; gap:2px; }
+.unassigned-title { font-size:14px; font-weight:600; color:var(--text); }
+.unassigned-title .unassigned-num { color:var(--danger); }
+/* 未分配成员：名单固定高度内滚动（人多时不再把整块拉得超长） */
+.unassigned-panel .trial-member-list { flex:1 1 auto; min-height:60px; max-height:340px; overflow-y:auto; }
+
+/* Member Table */
+.member-section { padding:10px 20px; }
+.table-wrap { overflow-x:auto; background:var(--surface); border:1px solid var(--border); border-radius:8px; }
+table.member-table { border-collapse:collapse; width:max-content; min-width:100%; }
+table.member-table th, table.member-table td { border:1px solid var(--border); padding:4px 6px; text-align:center; white-space:nowrap; }
+table.member-table th { background:var(--table-header); font-size:11px; font-weight:600; color:var(--text-muted); position:sticky; top:0; z-index:5; }
+table.member-table th.assign-col { min-width:44px; }
+table.member-table th.name-col { min-width:150px; text-align:left; }
+table.member-table td.name-cell { text-align:left; }
+table.member-table td input { width:100%; border:1px solid transparent; background:transparent; font-size:13px; padding:2px 4px; border-radius:3px; color:var(--text); }
+table.member-table td input:focus { border-color:var(--accent); background:var(--input-bg); outline:none; }
+/* 「详情」列：专业 / 装备 / 房屋 / 神龛 / 成就 等全部个人数据移入成员详情弹窗 */
+table.member-table th.detail-col { min-width:52px; }
+table.member-table td.detail-cell { text-align:center; }
+/* 「主力专业」列：等级最高的 3 个专业 = 技能图标 + 等级 + 对应工具图标（名称 / 强化在悬停提示里） */
+table.member-table th.topskill-col { min-width:196px; text-align:left; }
+table.member-table td.topskill-cell { text-align:left; }
+.ts-list { display:flex; align-items:center; gap:5px; }
+.ts-chip { display:flex; align-items:center; gap:3px; padding:1px 5px; border:1px solid var(--border); border-radius:5px; background:var(--input-bg); }
+.ts-chip svg { display:block; flex:none; background:var(--icon-tile); border-radius:3px; }
+.ts-lv { font-size:11px; font-weight:600; color:var(--text); min-width:15px; text-align:center; }
+.ts-tool { display:flex; align-items:center; }
+.ts-tool.is-none { width:16px; height:16px; border:1px dashed var(--border); border-radius:4px; }
+.ts-empty { color:var(--text-faint); font-size:12px; }
+/* 「主手」列：装备图标 + 强化角标（行内小号，与详情弹窗的 .equip-cell 区分开） */
+table.member-table th.mainhand-col { min-width:56px; }
+table.member-table td.mainhand-cell { text-align:center; }
+.mini-equip { position:relative; display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; vertical-align:middle; }
+.mini-equip svg { display:block; flex:none; }
+.mini-equip .mini-enh { position:absolute; top:-3px; left:-3px; background:var(--enhance-badge-bg); color:var(--enhance-badge-fg); font-size:9px; font-weight:700; border-radius:3px; padding:0 2px; line-height:12px; }
+.mini-equip.is-empty { color:var(--text-faint); font-size:12px; }
+/* 成员详情弹窗正文（专业 / 装备 / 房屋 / 神龛 / 成就，按分组网格排布） */
+.detail-body { overflow-y:auto; min-height:0; }
+/* 详情弹窗标签页（个人资料 / 生活属性）：吸顶，滚动长内容时仍可切换 */
+.detail-tabs { position:sticky; top:0; z-index:2; display:flex; gap:2px; background:var(--modal-bg); border-bottom:1px solid var(--border); }
+.detail-tab { padding:6px 14px; font-size:12px; font-weight:600; color:var(--text-muted); background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; }
+.detail-tab:hover { color:var(--text); }
+.detail-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+/* 生活属性表：10 个生活技能 × 等级 / 成功率 / 工作能力 / 单次速度 / 双倍概率 */
+.life-stats-bar { display:flex; align-items:center; gap:8px; margin-top:8px; font-size:12px; color:var(--text-muted); }
+.life-stats-bar input { width:64px; text-align:center; padding:2px 4px; border:1px solid var(--border); background:var(--input-bg); border-radius:4px; color:var(--text); font-size:12px; }
+.life-stats { width:100%; border-collapse:collapse; font-size:12px; margin-top:6px; }
+.life-stats th { font-size:11px; font-weight:600; color:var(--text-muted); text-align:right; padding:6px 8px; border-bottom:1px solid var(--border); white-space:nowrap; cursor:help; }
+.life-stats th:first-child, .life-stats td:first-child { text-align:left; }
+.life-stats td { padding:5px 8px; text-align:right; border-bottom:1px solid var(--list-border); color:var(--text); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.life-stats tbody tr:last-child td { border-bottom:none; }
+.life-stats tbody tr:hover { background:var(--list-bg); }
+.life-stats .ls-skill { display:inline-flex; align-items:center; gap:6px; }
+.life-stats .ls-skill svg { width:18px; height:18px; flex:none; background:var(--icon-tile); border-radius:4px; }
+/* 详情「个人资料」页的专业等级图标：与试炼卡 / 成员表同一套底色，纯白图标才看得清 */
+.detail-grid.skill-grid .detail-item svg { background:var(--icon-tile); border-radius:4px; }
+.life-stats .ls-main { font-weight:600; }
+.life-stats .ls-sub { display:block; font-size:10px; font-weight:400; color:var(--text-faint); line-height:1.2; }
+.life-stats tr.is-zero td { color:var(--text-faint); }
+.life-stats tr.is-zero .ls-main { font-weight:400; }
+.detail-section { border-top:1px solid var(--border); padding-top:8px; }
+.detail-section:first-child { border-top:none; padding-top:0; }
+.detail-section-title { font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:6px; cursor:help; }
+/* 分组网格：每行最多 5 个；页面（或缩放）变窄时自动降到 4 / 3 / 2 个 */
+.detail-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; }
+.detail-grid.cols-5 { grid-template-columns:repeat(5,minmax(0,1fr)); }
+@media(max-width:1100px){ .detail-grid, .detail-grid.cols-5 { grid-template-columns:repeat(4,minmax(0,1fr)); } }
+@media(max-width:860px){ .detail-grid, .detail-grid.cols-5 { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+@media(max-width:640px){ .detail-grid, .detail-grid.cols-5 { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+.detail-item { display:flex; align-items:center; gap:6px; padding:4px 6px; border:1px solid var(--border); border-radius:6px; }
+.detail-item.is-inactive { opacity:.55; }
+.detail-item svg { width:20px; height:20px; flex:none; }
+.detail-item .di-label { flex:1; min-width:0; font-size:10px; line-height:1.15; color:var(--text-muted); word-break:break-word; }
+.detail-item .di-sub { display:block; color:var(--text-faint); }
+.detail-item input[type=number] { width:46px; flex:none; text-align:center; border:1px solid var(--border); background:var(--input-bg); border-radius:4px; color:var(--text); font-size:12px; padding:1px 2px; }
+.detail-item input[type=checkbox] { width:auto; margin:0; cursor:pointer; accent-color:var(--accent); flex:none; }
+/* 详情里的装备槽：图标 + 强化角标，点击打开装备选择器 */
+.detail-item .equip-cell { width:30px; height:30px; flex:none; margin-left:auto; }
+.detail-item .equip-cell svg { width:24px; height:24px; }
+/* 神龛分两行：上行「生活类」、下行「战斗类」 */
+.detail-rows { display:flex; flex-direction:column; gap:6px; }
+.detail-row { display:flex; align-items:center; gap:8px; }
+.detail-row-label { flex:none; width:40px; font-size:10px; color:var(--text-faint); text-align:right; }
+.detail-row .detail-grid { flex:1; min-width:0; }
+/* 生活装备区：与工具 / 战斗装备同款的方格，每行最多 5 个（格子只有图标，物品名在悬停提示里）。
+   方格的「未拥有 / 已拥有」样式见下方 .equip-cell.own-cell。 */
+.own-rows { display:flex; flex-direction:column; gap:6px; }
+.own-row { display:flex; align-items:flex-start; gap:8px; }
+.own-row-label { flex:none; width:64px; padding-top:10px; font-size:11px; color:var(--text-muted); text-align:right; }
+.own-chips { flex:1; min-width:0; display:grid; grid-template-columns:repeat(5,36px); gap:6px; justify-content:start; }
+/* 强化等级小面板（点 chip 正文弹出，挂在 body 上，不被弹窗滚动容器裁切） */
+.enh-pop { position:fixed; z-index:400; width:214px; background:var(--modal-bg); border:1px solid var(--border); border-radius:8px; padding:8px; box-shadow:0 6px 18px var(--shadow); display:flex; flex-direction:column; gap:6px; }
+.enh-pop-title { font-size:12px; font-weight:600; color:var(--text); }
+.enh-pop-title .enh-pop-slot { font-weight:400; color:var(--text-faint); font-size:10px; }
+.enh-pop-row { display:flex; align-items:center; gap:4px; }
+.enh-pop-step { width:26px; height:26px; flex:none; border:1px solid var(--border); background:var(--input-bg); color:var(--text); border-radius:5px; cursor:pointer; font-size:14px; line-height:1; }
+.enh-pop-step:hover { border-color:var(--accent); }
+.enh-pop-input { width:56px; flex:none; text-align:center; border:1px solid var(--border); background:var(--input-bg); border-radius:5px; color:var(--text); font-size:13px; padding:3px 2px; }
+.enh-pop-unit { font-size:10px; color:var(--text-faint); }
+.enh-pop-star { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-muted); cursor:pointer; }
+.enh-pop-star input { margin:0; cursor:pointer; accent-color:var(--accent); }
+.enh-pop-actions { display:flex; justify-content:space-between; gap:6px; }
+table.member-table tr:hover { background:var(--table-hover); }
+table.member-table td.assign-cell { font-weight:600; font-size:12px; }
+table.member-table td.assign-cell svg { width:22px; height:22px; background:var(--icon-tile); border-radius:4px; }
+.assign-T1 { background:var(--assign-t1-bg); }
+.assign-T2 { background:var(--assign-t2-bg); }
+.assign-T3 { background:var(--assign-t3-bg); }
+.assign-T4 { background:var(--assign-t4-bg); }
+.assign-none { color:var(--text-faint); }
+
+/* Equipment cell */
+.equip-cell { width:36px; height:36px; position:relative; cursor:pointer; border:1px solid var(--border); border-radius:4px; display:flex; align-items:center; justify-content:center; }
+.equip-cell:hover { border-color:var(--accent); background:var(--equip-hover); }
+.equip-cell svg { width:30px; height:30px; }
+.equip-cell .enhance-badge { position:absolute; top:-2px; left:-2px; background:var(--enhance-badge-bg); color:var(--enhance-badge-fg); font-size:9px; font-weight:700; border-radius:3px; padding:0 2px; line-height:12px; }
+.equip-cell.empty::after { content:'+'; color:var(--text-faint); font-size:16px; }
+/* 生活装备「拥有制」方格：只有图标（物品名在悬停提示里，与工具 / 战斗装备一致）。
+   未拥有 → 虚线框 + 图标灰度（点一下即以 +0 拥有并打开强化面板）；已拥有 → 实线高亮 + 左上角标「★ +N」。 */
+.equip-cell.own-cell svg { width:26px; height:26px; }
+.equip-cell.own-cell.is-off { border-style:dashed; }
+.equip-cell.own-cell.is-off svg { filter:grayscale(1); opacity:.4; }
+.equip-cell.own-cell.is-owned { border-color:var(--accent); background:var(--equip-hover); }
+.equip-cell .own-badges { position:absolute; top:-4px; left:-4px; display:flex; align-items:center; gap:2px; }
+.equip-cell .own-badges .enhance-badge { position:static; top:auto; left:auto; }
+.equip-cell .own-badges .refine-star { color:#e8b339; font-size:11px; line-height:1; }
+
+/* Skill picker popup */
+.skill-picker-popup { position:absolute; background:var(--modal-bg); border:1px solid var(--border); border-radius:8px; padding:8px; z-index:200; display:grid; grid-template-columns:repeat(5,1fr); gap:6px; box-shadow:0 4px 12px var(--shadow); }
+.skill-picker-popup .skill-option { width:36px; height:36px; cursor:pointer; border:2px solid transparent; border-radius:6px; background:var(--icon-tile); }
+.skill-picker-popup .skill-option:hover { border-color:var(--accent); }
+.skill-picker-popup .skill-option svg { width:100%; height:100%; }
+.skill-picker-popup .skill-option.selected { border-color:var(--accent); background:var(--equip-hover); }
+
+/* Equipment Picker Modal */
+.modal-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:var(--modal-overlay); z-index:300; display:flex; align-items:center; justify-content:center; }
+.modal-dialog { background:var(--modal-bg); border-radius:12px; padding:20px; max-width:560px; width:90%; max-height:80vh; display:flex; flex-direction:column; gap:12px; box-shadow:0 8px 32px var(--shadow); color:var(--text); }
+.modal-title { font-size:16px; font-weight:600; display:flex; justify-content:space-between; align-items:center; }
+.modal-close { cursor:pointer; font-size:20px; color:var(--text-faint); border:none; background:none; }
+.modal-close:hover { color:var(--text); }
+.equip-search { padding:6px 10px; border:1px solid var(--search-border); border-radius:6px; font-size:13px; width:100%; background:var(--input-bg); color:var(--text); }
+.equip-icon-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(44px, 1fr)); gap:6px; overflow-y:auto; max-height:300px; padding:4px; border:1px solid var(--list-border); border-radius:6px; }
+.equip-icon-option { width:40px; height:40px; cursor:pointer; border:2px solid transparent; border-radius:6px; display:flex; align-items:center; justify-content:center; position:relative; }
+.equip-icon-option:hover { border-color:var(--accent); }
+.equip-icon-option.selected { border-color:var(--accent); background:var(--equip-hover); }
+.equip-icon-option svg { width:32px; height:32px; }
+.equip-icon-option .icon-name { display:none; position:absolute; bottom:100%; left:50%; transform:translateX(-50%); background:var(--icon-name-bg); color:var(--icon-name-fg); padding:2px 6px; border-radius:3px; font-size:10px; white-space:nowrap; z-index:10; }
+.equip-icon-option:hover .icon-name { display:block; }
+.enhance-selector { display:flex; flex-wrap:wrap; gap:4px; }
+.enhance-btn { padding:3px 8px; border:1px solid var(--border); border-radius:4px; background:var(--surface); color:var(--text); cursor:pointer; font-size:12px; }
+.enhance-btn:hover { background:var(--hover); }
+.enhance-btn.selected { background:var(--enhance-sel-bg); color:var(--enhance-sel-fg); border-color:var(--accent); }
+.modal-actions { display:flex; gap:8px; justify-content:flex-end; }
+.equip-preview { display:flex; align-items:center; gap:8px; padding:8px; background:var(--list-bg); border-radius:6px; }
+.equip-preview .equip-cell { border:1px solid var(--border); }
+.equip-preview-label { font-size:12px; color:var(--text-muted); }
+
+/* 导入结果报告（更新 / 新增 / 保留 各一行；保留名单可删除） */
+.import-report { display:flex; flex-direction:column; gap:10px; overflow-y:auto; }
+.ir-row { border:1px solid var(--border); border-radius:6px; padding:8px 10px; background:var(--list-bg); }
+.ir-head { display:flex; align-items:baseline; gap:8px; }
+.ir-label { font-weight:600; font-size:13px; color:var(--text); }
+.ir-count { font-size:12px; font-weight:600; color:var(--accent); }
+.ir-names { display:flex; flex-wrap:wrap; gap:4px 6px; margin-top:6px; max-height:120px; overflow-y:auto; }
+.ir-name { font-size:12px; padding:1px 6px; border:1px solid var(--border); border-radius:10px; background:var(--surface); color:var(--text-muted); }
+/* 「保留」名单：悬停整体变删除按钮；点击进入确认态，再点一次才删 */
+.ir-name.ir-del { cursor:pointer; }
+.ir-name.ir-del:hover, .ir-name.ir-del.is-confirm { background:var(--danger); border-color:var(--danger); color:#fff; }
+.ir-name.ir-del:hover::after { content:' ✕'; }
+.ir-none { font-size:12px; color:var(--text-faint); }
+
+/* Summary（计算汇总，放在「试炼配置」标题行右侧，不用滚到底） */
+.summary-bar { display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--text-muted); }
+.summary-bar span { font-weight:600; color:var(--text); }
+.summary-bar .summary-num { color:var(--accent); font-size:13px; }
+
+/* Share Dialog */
+.share-field { margin-bottom:8px; }
+.share-field label { display:block; font-size:12px; color:var(--text-muted); margin-bottom:2px; }
+.share-field input { width:100%; padding:6px 8px; border:1px solid var(--search-border); border-radius:4px; font-size:13px; background:var(--input-bg); color:var(--text); }
+.share-url { padding:8px; background:var(--list-bg); border-radius:4px; font-size:12px; word-break:break-all; cursor:pointer; color:var(--text); }
+.share-url:hover { background:var(--hover); }
+
+.hidden { display:none !important; }
+/* Scrollbar */
+::-webkit-scrollbar { width:8px; height:8px; }
+::-webkit-scrollbar-thumb { background:var(--scrollbar-thumb); border-radius:4px; }
+::-webkit-scrollbar-track { background:var(--scrollbar-track); }
