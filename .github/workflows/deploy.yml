@@ -80,7 +80,7 @@ jobs:
           mkdir -p mwi
           # /mwi/ 入口用 index.html；导出脚本被页面以相对路径引用，必须一起放进去
           cp ../mwi_trial_calculator.html mwi/index.html
-          cp ../mwi_data_export.user.js mwi/mwi_data_export.user.js
+          cp ../mwi_profile_export.user.js mwi/mwi_profile_export.user.js
 
           git add mwi
           if git diff --cached --quiet; then
