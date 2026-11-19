@@ -22,6 +22,16 @@ if os.path.exists(GAME_DATA_PATH):
 else:
     print('WARNING: mwi_data.json not found, game data will be missing')
 
+# 游戏物品等级（itemLevel，取自 init_client_data 的 itemDetailMap）。
+# 导入配装时按装备等级覆盖：高级装备可覆盖低级装备。
+EQUIP_LEVELS_PATH = os.path.join(ASSETS_DIR, 'equip_levels.json')
+EQUIP_LEVELS = {}
+if os.path.exists(EQUIP_LEVELS_PATH):
+    with open(EQUIP_LEVELS_PATH, 'r', encoding='utf-8') as f:
+        EQUIP_LEVELS = json.load(f)
+else:
+    print('WARNING: equip_levels.json not found, equipment-level comparison will fall back')
+
 SKILL_KEYS = ['milking','foraging','woodcutting','cheesesmithing','crafting','tailoring','cooking','brewing','alchemy','enhancing']
 SKILL_LABELS = ['挤奶','采摘','伐木','奶酪锻造','制作','缝纫','烹饪','冲泡','炼金','强化']
 
@@ -292,6 +302,7 @@ def main():
     gd = GAME_DATA
     game_data_lines = []
     if gd:
+        game_data_lines.append('const EQUIP_LEVELS = %s;' % json.dumps(EQUIP_LEVELS, ensure_ascii=False, separators=(',', ':')))
         game_data_lines.append('const EQUIPMENT_BASE_BONUSES = %s;' % json.dumps(gd.get('equipmentBaseBonuses', {}), ensure_ascii=False))
         game_data_lines.append('const ENH_BONUS_PERCENT_TABLE = %s;' % json.dumps(gd.get('enhancementBonusTable', [])))
         game_data_lines.append('const ACCESSORY_ENH_SLOTS = new Set(%s);' % json.dumps(gd.get('accessoryEnhSlots', []), ensure_ascii=False))

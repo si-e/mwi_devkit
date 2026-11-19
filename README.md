@@ -22,10 +22,10 @@ mwi_devkit/
 │   ├── house_sprite.svg          # 17 个房屋房间图标（house_*，来自游戏 misc_sprite）
 │   ├── equip.json                # 权威槽位→中文装备名列表（生成 EQUIP_ICONS / EQUIP_FAMILIES 用；含「★」精炼款）
 │   ├── item_name_map.json        # 中文名→iconId 映射（生成图标用）
+│   ├── equip_levels.json         # iconId→itemLevel（游戏 itemDetailMap，导入时按装备等级覆盖用）
 │   └── mwi_data.json             # 游戏数据（装备加成表/房屋/成就/公会建筑/神龛，构建期内联）
-├── mwi_profile_export.user.js    # 油猴导出脚本（v3，推荐）：三条链路纯点击采集成员资料 / 生活配装 / 战斗配装，各自导出 JSON
-├── mwi_data_export.user.js       # 旧版：公会成员 profile（已被合并版取代，保留存档）
-├── mwi_trial_export.user.js      # 旧版：公会试炼全员配装（已被合并版取代，保留存档）
+├── mwi_profile_export.user.js    # 油猴采集脚本：三条链路模拟点击采集成员资料 / 生活配装 / 战斗配装，各自导出 JSON
+├── archive/                      # 脚本存档
 ├── docs/                         # 官网「新闻 / 更新日志 / 游戏指南」正文存档（规则与数值参考）
 └── .github/workflows/deploy.yml  # CI：构建并自动提交产物到 si-e.github.io/mwi
 ```
@@ -34,7 +34,8 @@ mwi_devkit/
 - CSS / JS / HTML 在 `src/` 下独立维护：`generate_html.py` 只负责读取它们、注入游戏数据与 SVG symbol、替换占位符，产物仍是单文件。改样式改 `src/styles.css`，改逻辑改 `src/app.js`；直接改产物会被下次构建覆盖。
 - `src/app.js` 里的三行数据占位注释（`// __EQUIP_ICONS_PLACEHOLDER__`、`// __LIFE_EQUIP_PLACEHOLDER__`、`// __GAME_DATA_PLACEHOLDER__`）是构建注入点，不要删除。
 - `skill_icons.svg` 等中间产物均由 `items.svg` 派生，无需单独保留，生成方式内置于 `generate_html.py`。
-- `generate_html.py` 从 `assets/` 读取 `equip.json`、`item_name_map.json` 及各 SVG。
+- `generate_html.py` 从 `assets/` 读取 `equip.json`、`item_name_map.json`、`equip_levels.json` 及各 SVG。
+- `equip_levels.json` 由游戏 `init_client_data` 的 `itemDetailMap` 提取（`itemLevel` 字段，键为 iconId 去掉 `/items/` 前缀），共 886 项；基础款与「★」精炼款等级相同。构建期内联为 `const EQUIP_LEVELS`；导入配装时同槽位多件互斥按它比较——**等级高者覆盖等级低者**；等级相同/任一方无数据则保留本地。
 
 ## 三、两大组件
 
@@ -99,16 +100,16 @@ mwi_devkit/
 - **奖励换算**（官方公式，规则存档见 `docs/milkywayidle-游戏指南.md` → 公会 →「公会点数与公会代币」；`docs/` 另存新闻、更新日志两标签页正文）：
   - 单场生活试炼基础点数 `tokenReward` = 首层 200 + 之后每层 100 + 未完成层「进度 × 该层奖励 ÷ 2」（数值口径对齐 Chen19970809/MWI_Trial_Calculator）。**基础点数总和 = Σ 4 场 `tokenReward`**，即分配算法的优化目标。
   - 获得公会点数 = 基础点数总和 × (1 + 建造者殿堂等级 × **2%/级**)；总代币 = 0.5 × 基础点数总和 × (1 + 金库等级 × 2%/级)，为每位符合条件成员的代币；报名至少一场试炼者额外 +50%。
-  - 系数标定（2026-11-17，LAJIZHAN 两周 12 条记录）：金库 1 级由「每人 5142 代币」回推 = 1+1×2% 精确吻合。建造者殿堂曾据 12 条记录拟合出 1.75%/级（8 级 → 显示/基础=1.14），**经用户确认该拟合有误、实际就是 2%/级**——偏低的拟合值源于模拟端漏算了全局加成（详见下条），把缺口错摊到了系数上。`GUILD_POINTS_BONUS_PER_LEVEL` / `GUILD_TOKEN_BONUS_PER_LEVEL` 两个常量可调。
-  - **每场试炼卡片上的「点数」已改为游戏口径**（基础 × 建造者殿堂倍率，括号附基础值），可直接与游戏内「1,610 点」这类数字对照。
+  - 系数：建造者殿堂、金库均为 **2%/级**。两个常量 `GUILD_POINTS_BONUS_PER_LEVEL` / `GUILD_TOKEN_BONUS_PER_LEVEL` 可调。
+  - **每场试炼卡片上的「点数」是游戏口径**（基础 × 建造者殿堂倍率，括号附基础值），可直接与游戏内「1,610 点」这类数字对照。
   - 工作量模型经 `workDone` 精确验证：(40000+4000×档) × (1+1%×人数) 与游戏实际消耗的比值 = 1.001（workDone 是**成功后**的有效工作量）。
-  - **速率偏差根因（2026-11-17 定案）：漏算了服务器社区大厅的全局 BUFF**（采集数量 / 生产效率 / 强化速度，各 19.5+0.5×等级%），以及导入时生活类公会建筑的有效等级加成（挤奶+6 / 采摘+6 / 缝纫+6 / 强化+6 等，`/guild_buildings/dairy_barn` 等 hrid → skill key 映射已由 `applyImportedGuildBuildings` 正确处理）。用真实 roster + 逐成员 `workDone` 回测：全局 BUFF 设为 1 级（+20%）时，挤奶/采摘/缝纫的实际/模拟 ≈ 0.99~1.02（吻合），强化 ≈ 1.06（成员少、波动大）；此前 4~10% 的「系统性低估」即来自把全局 BUFF 留空。**使用者需按自己服务器的实际社区 BUFF 等级填写「全局加成」三个输入框**，模拟器不会自动获取（该数据不在 profile 里）。试炼过程中等级/配装不变，不存在「试炼内升级」因素。
+  - **全局加成需手动填写**：服务器社区大厅的全局 BUFF（采集数量 / 生产效率 / 强化速度，各 19.5+0.5×等级%）不在 profile 里，模拟器不会自动获取，按自己服务器的实际等级填「全局加成」三个输入框。导入时生活类公会建筑的有效等级加成（挤奶+6 / 采摘+6 / 缝纫+6 / 强化+6 等；`/guild_buildings/dairy_barn` 等 hrid → skill key 映射由 `applyImportedGuildBuildings` 处理）也计入。模型假设试炼过程中等级/配装不变。
   - 汇总栏显示「获得公会点数 / 总代币 / 总最终等级…」，两个奖励数字与试炼卡的「代币」（该试炼基础点数）都有悬停公式说明，中英文同步。
   - 本计算器只模拟 4 场生活试炼；游戏每周另有 2 场战斗试炼（首层 400、之后每层 200）未计入。
 
-### 2. 数据导出油猴脚本 `mwi_profile_export.user.js`（v3.0.0，推荐）
+### 2. 数据采集油猴脚本 `mwi_profile_export.user.js`
 
-**三条链路、三个按钮、全部模拟真人点击，采完自动导出。**（两个旧脚本 `mwi_data_export.user.js` / `mwi_trial_export.user.js` 已被取代，保留作存档，**不要同时启用**——会重复 Hook WebSocket。）
+**三条链路、三个按钮、全部模拟真人点击，采完自动导出。**
 
 | 按钮 | 在哪个页面 | 做什么 | 导出 |
 |---|---|---|---|
@@ -116,72 +117,27 @@ mwi_devkit/
 | ② 采集生活配装 | 公会 - 试炼 | 打开生活试炼 → 逐个点「查看配装」 | `MWI_生活试炼配装_…json`（`_format:mwi-skilling-loadouts`） |
 | ③ 采集战斗配装 | 公会 - 试炼 | 打开战斗试炼 → 逐个点「查看配装」 | `MWI_战斗试炼配装_…json`（`_format:mwi-combat-loadouts`） |
 
-- **为什么全改成点击（v3 核心）**：v1/v2 用 WS 直发 `view_loadout`，依赖 `characterId` 映射——映射一旦为空或请求被游戏丢弃，就「只采到资料、查看配装一个都没发」。v3 彻底放弃直发：**模拟真人依次点成员、点游戏菜单里的按钮**，游戏自己带正确的 id 和 kind 发请求，脚本只在 WebSocket 上只读地收 `profile_shared` / `loadout_shared`。这是唯一能保证「真的打开过查看配装」的方式。
+- **采集方式**：模拟真人依次点成员、点游戏菜单里的按钮，游戏自己带正确的 id 和 kind 发请求；脚本只在 WebSocket 上只读地收 `profile_shared` / `loadout_shared`。
 - **生活 / 战斗配装分流**：点「查看配装」前记下 `{name, kind}`，回包据此落到 `skillingLoadouts` / `combatLoadouts` 两个 Map。同一人报两类试炼各采一份、互不覆盖。`hasLoadout:false` 的人回空配装（0 槽），照样算采到。
-- **数据流真相（真实样本 + bundle 证实）**：`资料` = `profile_shared`（当前穿戴 + 技能等级，算点数的基础）；`查看配装` = `loadout_shared`（报名时绑定的那套配装，生活 23 槽带工具 / 战斗 13 通用槽）。游戏报名 `sign_up_guild_trial` 带 `characterLoadoutId`，试炼真正生效的是 loadout。签名报名人次之和 = 应采配装份数。
-- **计算器导入**：三份 JSON 依次导入即可，按角色名合并——资料提供技能/当前装备，两份配装分别挂到 `skillingLoadout` / `combatLoadout`，**互不覆盖、也不覆盖生活技能/装备**；只在某类试炼出现的人建占位成员（等级全 0，不参与生活计算）。
-- **防高频风控**：一次只跑一条链路；每次点击/请求间有 850ms 起、向上抖动的间隔，看到「请勿过快」红条会自动退避并等 3s；试炼之间另有冷却。面板常驻显示、可拖拽、可收起；底部日志实时显示每人成功/失败。GM 菜单只有 4 条（三链路 + 清缓存）。
-- 只算生活点数时，**最少只导「成员资料」一份即可**（技能等级 + 当前穿戴都在里面）；另两份是报名绑定的实际配装，留存参考、不覆盖计算。
-
-### 2a. 旧版公会成员导出脚本 `mwi_data_export.user.js`（存档）
-- 进游戏后 Hook WebSocket 抓取 `init_character_data` / `profile_shared` / `guild_buffs_updated` / `guild_updated`，缓存成员完整 profile。
-- **采集对所有成员一视同仁，包括自己**：不做任何「自己角色」的特殊处理，也不依赖缓存跳过——每次采集都对名单里的人重新发 `view_profile` 并覆盖旧数据（用 `captures` 计数判断「又采到一个」，因为重采时 `Map.size` 不会增长）。
-- **个人神龛增益**、**成就信息**都随原始 profile 一起导出（`guildBuffLevelMap` / `characterAchievements`）。
-- **公会建筑等级**：`guild_updated` 的 `guildBuildingLevelMap`（键 `/guild_buildings/<building>`，公会全局），以 `_guildBuildingLevelMap` 挂在**第一位成员**上；计算器导入时自动预填建筑栏。
-- **单按钮流程**：页面上**只有一个按钮**，且**只在「公会 - 成员」界面显示**（`MutationObserver` 跟踪 `[class*="GuildPanel_membersTable"]` 的出现/消失）。点「开始采集公会成员」→ 逐个 `view_profile`（经 WebSocket 直发，绕开 UI 可信校验）→ **采集完成自动导出 JSON**。
-- 按钮状态机：`开始采集公会成员` → `采集中 x/y`（采集中禁用）→ `已导出 N 人 · 点此重采` / `采集失败 · 点此重试`。
-- **待机时不显示缓存人数**：按钮文案只由采集流程与显隐逻辑驱动，不会把尚未采集的「自己」算进 N 里造成误判。
-- 输出 JSON 数组 = 本次采集到的全部 profile（含自己），文件名 `MWI_公会_N人_日期.json`。仅当一个成员都没采到时，才退回用实时 WS 数据重建自己那份（保留「只导出自己」的用法）。
-- 油猴菜单命令 2 条：**「采集公会成员并保存 JSON」**（等价于点按钮）与「导出 JSON（当前已采集数据）」（手动兜底，只导出已采集到的内容）。
-
-### 3. 旧版试炼配装导出脚本 `mwi_trial_export.user.js`（存档，功能已并入合并版）
-- **用途**：按试炼为单位采集**全员配装**（4 场生活 + 2 场战斗）——一次性拿到「谁报了哪场试炼」+ 每个人的完整 profile。
-- **抓包口径**：只用 `profile_shared`（24 槽穿戴 / 技能书 / 食物咖啡 / 两张触发器表 / 技能 / 房屋 / 个人神龛 / 成就）。⚠️ 旧结论认为「不需要 `loadout_shared`、`profile_shared` 就是全集」——已证伪，见 §2 的 v3.0.0 说明；此存档脚本仅作参考。
-- **两条通路，默认走快的**：
-  - **极速**：直接经 WebSocket 发 `{type:'view_profile', viewProfileData:{characterName}}`，一条请求换一份 `profile_shared`。不用点名字、不用点「查看配装」。
-  - **点击兜底**：点成员名字 → 成员小窗（`GuildPanel_memberActionMenu`）→「查看配装」→ 等配装页（`SharableProfile_modalContent`）→ 关闭。极速模式连败 3 次（或 socket 未就绪）自动降级，已拿到的不会重采。
-- **发送节奏（防「请勿过快发送游戏指令」）** —— v1.2 按真实日志重新标定：
-  - 间隔**基准 800ms + 向上抖动 0~35%**（面板可调 500~3000ms），即 0.9~1.25 次/秒，**只比基准慢、不会更快**。旧版 300ms±25%（3.3 次/秒）实测约 20 人 / 6 秒就触发红条；800ms 以上不再触发。
-  - **默认并发 1**：并发只重叠「等 profile 回来」的等待，不提高发送频率，却增加突发特征——慢速档直接用单发。
-  - **原子时间槽**：并发 worker 先预订发送时刻再 await，避免两个 worker 算出同一个等待、一起发（那样实际间隔会砍半，正是最初被限速的原因）。
-  - **限速自适应（防震荡）**：检测到右侧红条 `Notification_notification` 里的「过快」，间隔 ×1.35（上限 3000ms）、冷却 2.5~4s；同一条红条用 8s 重复锁，不会像旧版那样 300→480→768→1200 三连跳。恢复后每 20 次成功 ×0.95 缓慢回落，**地板 = 基准 800ms，绝不跌回旧危险区**（旧版每 10 次 ×0.85，30 次就从 1200 掉到 737 又触发，125 人震荡 22 次耗时 161.7s）。被限速丢掉的人会在本场结尾按新节奏补采一遍，再走点击兜底。
-  - 实测（模拟 120 人）：间隔 min 800ms / max 1075ms / 平均 929ms，全程约 110s，**不触发限速反而比旧版 161.7s 更快**。
-  - localStorage 配置键加了 `:v2` 后缀——旧版存的 `并发2 / 间隔300ms` 危险配置不会覆盖新默认值。
-- **名单只能从 DOM 读**（WS 里没有「谁报了哪场试炼」这层关系）：试炼卡片 `[class*="GuildPanel_trialTile"]`（实测正好 6 张）→ 点击 → 成员列表 `GuildPanel_signupModal`（`memberRow` / `memberName` + `Lv.n`）→ 读完关掉 → 下一张。卡片本身已带名字 / 图标 / 报名数，点开前就能定性。
-- **⚠️ 配装只需一套的旧结论已证伪**：早期据 `data/member_profile.html`（配装页 24 个 `equipmentSlot`、无动作类型切换控件）推断「每个成员一套穿戴、`profile_shared` 就是全集」。实际这只是「资料当前穿戴」；报名试炼时各自绑定独立 loadout，且生活（23 槽带工具）与战斗（13 通用槽）完全不同，须分别走 `view_loadout` 的 `kind:'skilling'` / `kind:'combat'` 拿 `loadout_shared`。经真实 WS 样本（`data/MWI_原始WS样本_2026-11-18.json`）+ 游戏 bundle 双重证实。见 §2 的 v3.0.0 说明。
-- **试炼身份**：图标即 id——生活试炼是 `skills_sprite#milking|foraging|tailoring|enhancing`，战斗试炼是 `trial_chameleon` / `trial_swarm`（怪物名，两场天然互不覆盖），`actionTypeHrid` 统一为 `/action_types/combat`。
-- **去重**：同一人常在多场试炼里出现，profile 已在手就命中缓存，不再发请求。
-- 输出 JSON（`MWI_试炼配装_<公会>_<N>试炼_<M>人_<日期>.json`）：
-  ```jsonc
-  {
-    "_format": "mwi-trial-roster", "_version": 1,
-    "equipmentSource": "profile.wearableItemMap",
-    "guild": { "name": "...", "id": "..." },
-    "guildBuildingLevelMap": { "/guild_buildings/...": 3 },
-    "trials": [{ "key": "milking", "label": "挤奶", "actionTypeHrid": "/action_types/milking",
-                 "signup": "30 / 30", "status": "已完成",
-                 "members": ["Eyars", "..."], "memberLevels": { "Eyars": 120 } }],
-    "members": [{ /* 原样 profile_shared.profile */ "_trials": ["milking"] }]
-  }
-  ```
-- 另有一条菜单命令 **「导出公会数组格式」**，产出与 `mwi_data_export.user.js` 完全同构的数组，可直接给计算器现有导入逻辑用（只多一个 `_trials` 字段，不认识也不影响）。
-- 菜单命令：采集全部 / 采集当前 / 导出试炼 JSON / 导出公会数组 / 清空缓存 / 诊断（打印并复制 socket 状态、卡片解析结果、弹窗与配装页 DOM）。
-- 卡片识别不到时，先手动点开一场试炼，用「采集当前试炼」。（面板早期的「自定义卡片 CSS 选择器」输入框已移除，卡片识别统一用默认 `[class*="GuildPanel_trialTile"]`。）
+- **数据流**：`资料` = `profile_shared`（当前穿戴 + 技能等级，算点数的基础）；`查看配装` = `loadout_shared`（报名时绑定的那套配装，生活 23 槽带工具 / 战斗 13 通用槽）。游戏报名 `sign_up_guild_trial` 带 `characterLoadoutId`，试炼真正生效的是 loadout。签名报名人次之和 = 应采配装份数。
+- **计算器导入**：三份 JSON 依次导入即可，按角色名合并（顺序无关）——资料提供技能/当前装备；两份配装除了挂到 `skillingLoadout` / `combatLoadout` 留存，还会把其中的装备**合并进当前装备**：工具/战斗件/两用槽走配装制（一槽一件），同槽位按游戏**装备等级 itemLevel（`equip_levels.json`）保留高级的一件**（不是按强化等级；等级相同/无数据则保留本地）；生活件走拥有制（多件并存、按技能择优）取并集。绝不覆盖技能等级/神龛/房屋；只在某类试炼出现的人建占位成员（等级全 0，不参与生活计算）。导入配装后会立即重算结果。
+- **防高频风控**：一次只跑一条链路；每次点击/请求间有 850ms 起、向上抖动的间隔，看到「请勿过快」红条会自动退避并等 3s；试炼之间另有冷却。面板**仅在公会页显示**，可拖拽、可收起；底部日志实时显示每人成功/失败。GM 菜单 4 条（三链路 + 清缓存）。
+- 只算生活点数时，**最少只导「成员资料」一份即可**（技能等级 + 当前穿戴都在里面）；另两份是报名绑定的实际配装，导入后会补齐当前穿戴缺失的装备槽（同槽位保留装备等级更高的一件），并把报名配装留在详情里供对照。
 
 ## 四、数据流（端到端）
 
-1. 安装 `mwi_profile_export.user.js` → 进游戏。浮动面板常驻在右下角，三个按钮：
+1. 安装 `mwi_profile_export.user.js` → 进游戏。公会页浮动面板在右下角，三个按钮：
    - 切到公会 **成员** 页 → 点「① 采集成员资料」→ 逐个点「资料」→ 采完自动下载 `MWI_成员资料_…json`。
    - 切到公会 **试炼** 页 → 点「② 采集生活配装」→ 打开生活试炼、逐个点「查看配装」→ 自动下载生活配装 JSON。
    - 仍在 **试炼** 页 → 点「③ 采集战斗配装」→ 打开战斗试炼、逐个点「查看配装」→ 自动下载战斗配装 JSON。
    - 三条链路一次跑一条、中间隔几分钟降风控；每条采完自动导出，不需要单独的导出按钮。
 2. 打开计算器 HTML → 点「导入」**依次读这三份 JSON**（按角色名合并、各挂各的字段互不覆盖）→ 自动计算并显示分配。只算生活点数时最少只导「成员资料」一份即可。（导入同时接受计算器自己「导出」的备份）
-   - 只想算生活试炼点数时，最少只需「资料当前装备」那份（含技能等级 + 当前穿戴）；生活/战斗配装两份是报名绑定的实际配装，导入后留存供参考、不覆盖生活计算。
+   - 只想算生活试炼点数时，最少只需「资料当前装备」那份（含技能等级 + 当前穿戴）；生活/战斗配装两份是报名绑定的实际配装，导入后会把装备并进当前装备（同槽位按装备等级保留高级的一件）、并留在详情里供对照。
 3. 网页「导出」按钮可把当前全部数据存成备份 JSON。
 
 ## 五、在线协作（jsonbin.io + 本地加密）
 - 后端用 jsonbin.io public bin：创建须带 `X-Bin-Private:false`；写操作须带 `X-Master-Key`。
-- **密钥派生**：加密密码为固定常量 `SHARE_PASSWORD = 'layu'`，`PBKDF2('layu', guild)` 派生 AES-GCM 256 密钥。分享链接只含 `guild` + `bin` 两个参数；`mk` 参数仍兼容读取。
+- **密钥派生**：加密密码为固定常量 `SHARE_PASSWORD = 'layu'`，`PBKDF2('layu', guild)` 派生 AES-GCM 256 密钥。分享链接只含 `guild` + `bin` 两个参数；`mk` 参数也支持读取。
 - Master Key 只存创建者本地（localStorage），不进分享链接——写权限真正受控于创建者。
 - gzip 压缩：免费套餐单条 100KB 上限，80 人数据经 gzip 后约 5.9KB base64；用 CompressionStream/DecompressionStream，不支持时降级不压缩。
 - **导入语义（两路统一「并集合并」）**：
@@ -191,12 +147,12 @@ mwi_devkit/
   - 两步都会立即 `forcePushToBin` 全量覆盖 bin（不走合并），防止被远端旧数据覆盖。
 - **删除语义（墓碑机制）**：`deletedIds` 记录已删除成员 id，`mergeState` 合并两端墓碑并过滤，防止共享模式下删除的成员被远端旧数据"复活"。
 - 并发安全：保存时先 GET 远端，按 `_ts` 时间戳逐条合并（merge-on-save）。共享模式显示 🔄 刷新按钮。
-- 无 URL 参数时走 localStorage 离线模式。
+- 无 URL 参数时走 localStorage 离线模式，数据固定存在 `mwi_trial_data_v2`。加载时清理其它 `mwi_trial_*` 键；`saveData()` 遇到配额不足会先清理再重试，仍失败则弹窗告警。
 
 ## 六、构建与二次开发
-- 生成计算器：在包根目录运行 `python generate_html.py`。脚本读取 `src/index.html`、`src/styles.css`、`src/app.js`，以及 `assets/` 下的 `items.svg`、`skills_sprite.svg`、`buffs_sprite.svg`、`guild_sprite.svg`、`house_sprite.svg`、`equip.json`、`item_name_map.json`、`mwi_data.json`，注入数据后输出 `mwi_trial_calculator.html`（单文件，可直接浏览器打开）。
+- 生成计算器：在包根目录运行 `python generate_html.py`。脚本读取 `src/index.html`、`src/styles.css`、`src/app.js`，以及 `assets/` 下的 `items.svg`、`skills_sprite.svg`、`buffs_sprite.svg`、`guild_sprite.svg`、`house_sprite.svg`、`equip.json`、`item_name_map.json`、`equip_levels.json`、`mwi_data.json`，注入数据后输出 `mwi_trial_calculator.html`（单文件，可直接浏览器打开）。
 - 前端源码在 `src/` 下按 CSS / JS / HTML 分开维护；`src/app.js` 可单独校验：`node --check src/app.js`。
-- 导出脚本：直接在 `mwi_data_export.user.js` 修改即可（约 1000 行）。按油猴脚本规范发布，`@match` 已在文件头定义。
+- 采集脚本：在 `mwi_profile_export.user.js` 修改。按油猴脚本规范发布，`@match` 已在文件头定义。
 - 如需重新生成 `item_name_map.json`（中文名→iconId），原始数据来自游戏本地化 chunk，解析脚本为 `parse_zh_items.py`（未纳入本包，仅说明来源）。
 
 ### 自动部署（GitHub Actions）
@@ -204,10 +160,10 @@ mwi_devkit/
 
 ```
 push → python generate_html.py → 校验产物完整性/体积 → 克隆 si-e/si-e.github.io
-     → 写 mwi/index.html + mwi/mwi_data_export.user.js → commit & push（只改 mwi/）
+     → 写 mwi/index.html + mwi/mwi_profile_export.user.js → commit & push（只改 mwi/）
 ```
 
-- 产物地址：`https://si-e.github.io/mwi/`（入口 `mwi/index.html`）；导出脚本 `mwi_data_export.user.js` 与页面相对引用保持一致。
+- 产物地址：`https://si-e.github.io/mwi/`（入口 `mwi/index.html`）；采集脚本 `mwi_profile_export.user.js` 与页面相对引用保持一致。
 - 只改动目标仓库的 `mwi/` 目录，站点其它文件原样保留；**产物无变化时不会产生空提交**；目标仓库有新提交时自动 `rebase` 重试（最多 3 次）。
 - 构建前置校验：产物必须生成、体积 > 1MB、且不含 `__CSS__` / `__JS__` / `__SVG_SYMBOLS__` 残留占位符，否则 job 直接失败（不会把坏产物推上线）。
 - 产物同时以 Artifact 形式上传到 Actions 页面（保留 7 天），方便排查。
@@ -215,7 +171,7 @@ push → python generate_html.py → 校验产物完整性/体积 → 克隆 si-
 **一次性配置**：在 `si-e/mwi_devkit` → Settings → Secrets and variables → Actions 新建 Secret **`DEPLOY_TOKEN`**，值为一个对 `si-e.github.io` 有 **Contents: Read and write** 权限的 PAT（fine-grained PAT 只需勾这一个仓库的 Contents 读写；classic PAT 需 `repo` 权限）。缺这个 Secret 时 job 会以明确报错终止。
 
 ## 七、边界与已知限制
-- 导入接受两种 JSON：**计算器备份** → 还原试炼/建筑/公会名，成员并集合并；**游戏导出的成员 profile 数组** → 按角色名合并（见上「导入语义」）。两者都会立即以全量覆盖的方式写回共享 bin。
+- 导入接受两类来源：**计算器备份** → 还原试炼/建筑/公会名，成员并集合并；**游戏采集 JSON**（成员资料 / 生活配装 / 战斗配装）→ 按角色名合并，装备按等级并入当前装备（见上「导入语义」）。导入后立即以全量覆盖的方式写回共享 bin。
 - 装备录入方式：**28 个生活装备方格**（上衣10/下装10/披风4/单件4）+ **22 个配装选择器**（10 生活工具 + 4 两用槽 项链/耳环/戒指/袋子 + 8 战斗配装槽 主手/副手/头部/身体/腿部/手部/脚部/背部），无护符，双手并入主手；装备图标 427 个全部成功映射。
 - 全局 BUFF 仅本地生效，不参与共享同步；**公会建筑 + 个人神龛(10 槽) + 成就(6 档) + 房屋房间(17) + 装备拥有集合（含精炼标记）均进入共享 payload**（建筑按时间戳合并，其余逐人按 `_ts` 合并）。
 - 已知近似：未收录进「装备基础加成表」的非工具装备（多为战斗护甲/武器，以及游戏里那批低阶技能护甲）会给一个**通用微小生活加成近似**（`+L×0.002 速度 / +L×0.001 效率 / +L×0.1 等级`）。**袋子槽位已按游戏事实排除该近似**（袋子只给食物/饮料槽位与生命/法力上限，对生活技能恒为 0）。

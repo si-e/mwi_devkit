@@ -2503,6 +2503,36 @@ function calculate() {
 }
 
 // === Import ===
+// 把游戏原生 wearableItemMap（profile_shared / loadout_shared 通用）转成计算器的
+// { equipment, ownedEquip }：工具/战斗件/两用槽 → equipment（一槽一件）；
+// OWNED_SLOTS 里的生活家族件 → ownedEquip（拥有集合，计算时按技能择优）。
+// member 资料导入与试炼配装导入共用这一份逻辑，保证两边对装备的理解完全一致。
+function wearableMapToEquip(wearableMap) {
+  const equipment = {};
+  const ownedEquip = {};
+  const map = (wearableMap && typeof wearableMap === 'object') ? wearableMap : {};
+  for (const [loc, item] of Object.entries(map)) {
+    const slot = ITEM_LOCATION_TO_SLOT[loc];
+    if (!slot) continue; // 跳过不支持的槽位 (charm, trinket 等)
+    const iconId = item && item.itemHrid ? item.itemHrid.replace('/items/', '') : '';
+    const enhance = Number(item && item.enhancementLevel || 0);
+    if (iconId) {
+      // 如果该槽位已有装备且当前是 two_hand, 不覆盖 main_hand
+      if (slot === '主手' && equipment[slot] && loc === '/item_locations/two_hand') continue;
+      equipment[slot] = { iconId, enhance };
+    }
+  }
+  for (const slot of OWNED_SLOTS) {
+    ownedEquip[slot] = {};
+    const eq = equipment[slot];
+    if (eq && eq.iconId && isOwnedFamily(slot, eq.iconId)) {
+      ownedEquip[slot][eq.iconId] = clampEnhance(eq.enhance);
+      delete equipment[slot];
+    }
+  }
+  return { equipment, ownedEquip };
+}
+
 function parseMemberFromProfile(profile) {
   if (!profile) return null;
   const name = (profile.sharableCharacter && profile.sharableCharacter.name) || '';
@@ -2516,31 +2546,9 @@ function parseMemberFromProfile(profile) {
     }
   }
   const levels = SKILL_KEYS.map(k => skillMap[k] || 0);
-  // 提取装备
-  const equipment = {};
-  const wearableMap = profile.wearableItemMap || {};
-  for (const [loc, item] of Object.entries(wearableMap)) {
-    const slot = ITEM_LOCATION_TO_SLOT[loc];
-    if (!slot) continue; // 跳过不支持的槽位 (charm, trinket 等)
-    const iconId = item.itemHrid ? item.itemHrid.replace('/items/', '') : '';
-    const enhance = Number(item.enhancementLevel || 0);
-    if (iconId) {
-      // 如果该槽位已有装备且当前是 two_hand, 不覆盖 main_hand
-      if (slot === '主手' && equipment[slot] && loc === '/item_locations/two_hand') continue;
-      equipment[slot] = { iconId, enhance };
-    }
-  }
-  const out = { name, levels, equipment, ownedEquip: {} };
-  // 装备「拥有制」：把当前穿戴中、且属于可勾选家族的装备作为「拥有集合」的初值
-  // （游戏 profile_shared 只含穿戴中的装备，没有背包，其余拥有项需手工补勾）
-  for (const slot of OWNED_SLOTS) {
-    out.ownedEquip[slot] = {};
-    const eq = equipment[slot];
-    if (eq && eq.iconId && isOwnedFamily(slot, eq.iconId)) {
-      out.ownedEquip[slot][eq.iconId] = clampEnhance(eq.enhance);
-      delete equipment[slot];
-    }
-  }
+  // 提取装备（与试炼配装导入共用同一转换逻辑）
+  const { equipment, ownedEquip } = wearableMapToEquip(profile.wearableItemMap);
+  const out = { name, levels, equipment, ownedEquip };
   // 逐人加成数据：公会成员导出的是完整 profile，可能携带这些字段（成就/房屋 buff 依赖它们）
   if (profile.achievementsValue) out.achievementsValue = profile.achievementsValue;
   if (profile.achievementActionTypeBuffsDict) out.achievementActionTypeBuffsDict = profile.achievementActionTypeBuffsDict;
@@ -2659,8 +2667,53 @@ function normalizeLoadout(lo, kind) {
   return out;
 }
 
+// 装备等级（游戏 itemLevel，来自 init_client_data 的 itemDetailMap，构建期内联到 EQUIP_LEVELS）。
+// 数值越大装备等级越高；_refined 归一到基础款再查（游戏里基础/精良款 itemLevel 相同）。
+// 返回 undefined 表示该 iconId 没有等级数据 —— 此时不覆盖、保留本地（不回退到任何品质顺序）。
+function equipItemLevel(iconId) {
+  if (typeof EQUIP_LEVELS === 'undefined' || !EQUIP_LEVELS) return undefined;
+  const s = String(iconId || '');
+  const base = s.endsWith('_refined') ? s.slice(0, -'_refined'.length) : s;
+  let lv = EQUIP_LEVELS[s];
+  if (lv == null) lv = EQUIP_LEVELS[base];
+  return typeof lv === 'number' ? lv : undefined;
+}
+
+// 比较同一槽位两件装备谁更高级：只按 itemLevel（数值高者胜）。
+// 任一方没有等级数据 → 返回 0（保留本地，不覆盖）。返回 >0 表示 fresh 胜，<0 表示 cur 胜。
+function compareEquipRank(slot, curIconId, freshIconId) {
+  const lc = equipItemLevel(curIconId), lf = equipItemLevel(freshIconId);
+  if (lc == null || lf == null) return 0;
+  return lf - lc;
+}
+
+// 一槽一件的装备（战斗件/两用/工具）逐槽合并：
+//   · 一边空 → 取另一边；
+//   · 同 iconId → 取强化高者；
+//   · 不同 iconId（同槽互斥）→ 取装备等级（itemLevel）更高的一件；任一方无等级数据则保留本地；
+// 这样把报名配装并进当前穿戴时，不会被低级战斗装顶掉高级装备。
+function mergeEquipByQuality(local, fresh) {
+  const out = {};
+  for (const slot of Object.keys(local || {})) {
+    const e = local[slot];
+    if (e && e.iconId) out[slot] = { iconId: e.iconId, enhance: clampEnhance(e.enhance) };
+  }
+  for (const slot of Object.keys(fresh || {})) {
+    const e = fresh[slot];
+    if (!e || !e.iconId) continue;
+    const cur = out[slot];
+    if (!cur || !cur.iconId) { out[slot] = { iconId: e.iconId, enhance: clampEnhance(e.enhance) }; continue; }
+    if (cur.iconId === e.iconId) { cur.enhance = Math.max(clampEnhance(cur.enhance), clampEnhance(e.enhance)); continue; }
+    if (compareEquipRank(slot, cur.iconId, e.iconId) > 0) out[slot] = { iconId: e.iconId, enhance: clampEnhance(e.enhance) };
+  }
+  return out;
+}
+
 // 试炼配装按角色名合并进现有成员：已有成员 → 挂到 field 指定字段；没有则新建占位成员。
-// 只写那一个字段，绝不动 levels/equipment/shrines —— 三份数据互不覆盖。
+// 除了留存 loadout 本身，还把其中的 wearableItemMap 转成 equipment/ownedEquip 后合进当前装备：
+//   · equipment（战斗件/两用/工具，一槽一件）→ 同槽位按【装备等级 itemLevel】保留高级的一件；
+//   · ownedEquip（生活件，多件并存）→ 取并集，互不互斥；
+// levels/shrines 等绝不动。支持先导任意一份、顺序无关。
 function mergeLoadouts(dump, field, kind) {
   const list = (dump.members || []).map(function(lo){ return normalizeLoadout(lo, kind); }).filter(Boolean);
   if (!list.length) return null;
@@ -2679,17 +2732,24 @@ function mergeLoadouts(dump, field, kind) {
     const k = String(lo.name).trim();
     if (seen[k]) continue;
     seen[k] = true;
+    // 报名配装的装备 → 计算器装备结构（工具/战斗件/两用槽 → equipment；生活家族 → ownedEquip）
+    const gear = wearableMapToEquip(lo.wearableItemMap);
     const old = byName[k];
     if (old) {
       old[field] = lo;
+      old.equipment = mergeEquipByQuality(old.equipment, gear.equipment);
+      old.ownedEquip = mergeOwnedEquip(old.ownedEquip, gear.ownedEquip);
       old._ts = Date.now();
       updated++;
     } else {
-      // 只在这类试炼出现、没报别处的人 → 建占位成员（levels 全 0，不参与计算），保留配装
+      // 只在这类试炼出现、没报别处的人 → 建占位成员（levels 全 0，不参与计算），保留配装 + 装备
       const fresh = restoreMemberDump({ name: k });
       fresh.id = nextId++;
       fresh[field] = lo;
+      fresh.equipment = mergeEquipByQuality(fresh.equipment, gear.equipment);
+      fresh.ownedEquip = mergeOwnedEquip(fresh.ownedEquip, gear.ownedEquip);
       state.members.push(fresh);
+      byName[k] = fresh;
       added++;
       addedNames.push(k);
     }
@@ -2746,10 +2806,11 @@ function importCalculatorDump(dump) {
   return { count: state.members.length, stat: stat };
 }
 
-// 导入后落盘：共享模式下立即全量覆盖 bin（不走合并，防止被旧数据覆盖），否则只写本地。
+// 导入后落盘：共享模式下立即全量覆盖 bin（不走合并，防止被旧数据覆盖），否则写本地。
+// 本地写入统一走 saveData()（含配额满时清理旧缓存重试 + 失败告警），不要在这里
+// 静默 setItem 一次——旧实现就是这里 catch 吞掉 QuotaExceededError 导致数据假保存。
 async function persistAfterImport() {
   const data = JSON.stringify(sharedPayload());
-  try { localStorage.setItem(getStorageKey(), data); } catch(e) {}
   if (state.isShared && state.binId && state.encKey) {
     await forcePushToBin(data);
   } else {
@@ -2960,26 +3021,29 @@ function importJson() {
         return;
       }
 
-      // ⓪a 生活试炼配装导出（mwi-skilling-loadouts）→ 按名字挂到成员的 skillingLoadout 字段。
-      //     与资料档 profile / 战斗档是同一个人的不同数据，三份互不覆盖；试炼配置不动。
+      // ⓪a 生活试炼配装导出（mwi-skilling-loadouts）→ 按名字挂到成员 skillingLoadout 字段，
+      //     并把配装装备并集合并进当前 equipment/ownedEquip（成员详情可见、计算可用）。
+      //     与资料档 profile / 战斗档是同一个人的不同数据，试炼配置不动。
       if (isSkillingLoadoutDump(parsed)) {
         const stat = mergeSkillingLoadouts(parsed);
         if (!stat) { alert(t('importFailed')); return; }
         if (parsed.guildBuildingLevelMap) applyImportedGuildBuildings([parsed]);
         await persistAfterImport();
         renderAll();
+        if (state.members.length > 0) calculate();   // 配装现已参与计算 → 立即刷新结果
         showImportReport(stat);
         return;
       }
 
-      // ⓪b 战斗配装导出（mwi-combat-loadouts）→ 按名字把 loadout 挂到成员的 combatLoadout 字段。
-      //     与 roster（资料当前装备）是同一个人的两套配装，互不覆盖；试炼配置不动。
+      // ⓪b 战斗配装导出（mwi-combat-loadouts）→ 按名字挂到成员 combatLoadout 字段，
+      //     并把配装装备并集合并进当前 equipment/ownedEquip。试炼配置不动。
       if (isCombatLoadoutDump(parsed)) {
         const stat = mergeCombatLoadouts(parsed);
         if (!stat) { alert(t('importFailed')); return; }
         if (parsed.guildBuildingLevelMap) applyImportedGuildBuildings([parsed]);
         await persistAfterImport();
         renderAll();
+        if (state.members.length > 0) calculate();   // 配装现已参与计算 → 立即刷新结果
         showImportReport(stat);
         return;
       }
@@ -3112,7 +3176,58 @@ function applyImportedGuildBuildings(profiles) {
 
 
 // === Data Persistence ===
-function getStorageKey() { return 'mwi_trial_'+(state.guild||'default'); }
+// 本地缓存固定用一个键，不再随 state.guild 漂移。
+// 旧版键名 = 'mwi_trial_' + state.guild：本地打开页时 guild 为空 → 读 mwi_trial_default；
+// 导入带公会名的数据后 state.guild 被赋值 → 却写到 mwi_trial_<guild>，刷新又读回 default，
+// 表现就是「导入后显示正常，一刷新就回到旧缓存」。公会名本就存在载荷内部，无需再进键名。
+const LOCAL_STORAGE_KEY = 'mwi_trial_data_v2';
+function getStorageKey() { return LOCAL_STORAGE_KEY; }
+
+// 旧版按公会名分键会遗留多个大体积缓存（mwi_trial_default / mwi_trial_<公会名>，
+// 甚至 state.guild 是对象时的 mwi_trial_[object Object] 垃圾键）。它们加起来能占满
+// localStorage 的 ~5MB 配额，导致固定键写入时抛 QuotaExceededError —— 表现就是
+// 「导入后显示正常（内存里有），一刷新就回到旧缓存（磁盘上写不进去）」。
+// 这里统一扫描并删除所有这些旧键，只在迁移需要时先读出内容。
+// 返回 { raw, srcKey, count }（raw 为选中那份的原文），供 migrateLegacyStorage 使用。
+function purgeLegacyStorageKeys() {
+  const legacy = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k || k.indexOf('mwi_trial_') !== 0 || k === LOCAL_STORAGE_KEY) continue;
+      let raw = localStorage.getItem(k), obj = null;
+      try { obj = JSON.parse(raw); } catch(e) {}
+      legacy.push({ key: k, raw: raw, obj: obj });
+    }
+  } catch(e) {}
+  legacy.forEach(function(x){ try { localStorage.removeItem(x.key); } catch(e) {} });
+  return legacy;
+}
+
+// 首次使用新键时，从旧版缓存里迁移出「最新」的一份：
+// 取成员 _ts 最大者（导入/编辑都会刷新 _ts），相同时取成员数多者。
+// 关键：先 purge 删除旧键腾出配额，再写固定键，否则旧键占满空间会写入失败。
+function migrateLegacyStorage() {
+  const legacy = purgeLegacyStorageKeys();
+  let best = null, bestTs = -1, bestCount = -1;
+  legacy.forEach(function(x){
+    const obj = x.obj;
+    if (!obj || !Array.isArray(obj.members)) return;
+    let ts = 0;
+    obj.members.forEach(function(m){ if (m && Number(m._ts) > ts) ts = Number(m._ts); });
+    const cnt = obj.members.length;
+    if (ts > bestTs || (ts === bestTs && cnt > bestCount)) {
+      bestTs = ts; bestCount = cnt; best = x;
+    }
+  });
+  if (best && best.raw) {
+    try { localStorage.setItem(LOCAL_STORAGE_KEY, best.raw); }
+    catch(e) { console.warn('[mwi] 迁移写入失败:', e.name); }
+    console.info('[mwi] 已迁移旧缓存到固定键:', best.key, '成员数:', bestCount);
+    return best.raw;
+  }
+  return null;
+}
 // 共享/持久化的统一载荷：成员（含个人神龛）+ 试炼槽 + 公会建筑（公会全局）等
 function sharedPayload() {
   return {
@@ -3126,12 +3241,38 @@ function sharedPayload() {
 }
 function saveData() {
   const data = JSON.stringify(sharedPayload());
-  try { localStorage.setItem(getStorageKey(), data); } catch(e) {}
+  try {
+    localStorage.setItem(getStorageKey(), data);
+  } catch(e) {
+    // 配额满：先把旧版遗留缓存清掉腾空间，再重试一次。
+    try {
+      purgeLegacyStorageKeys();
+      localStorage.setItem(getStorageKey(), data);
+      console.info('[mwi] 配额已满，已清理旧缓存后重新保存成功');
+    } catch(e2) {
+      // 仍然失败才真正告警，不再静默吞掉（否则用户永远不知道数据没落盘）。
+      console.error('[mwi] 本地缓存写入失败:', e2.name, e2.message);
+      if (typeof alert === 'function' && !state._saveWarned) {
+        state._saveWarned = true;
+        alert('警告：浏览器本地存储已满，数据无法保存到本机！\n\n'
+            + '本次修改只在当前页面有效，刷新后会丢失。\n'
+            + '请到浏览器设置中清除本站缓存，或换一个浏览器后重新导入数据。');
+      }
+    }
+  }
   if (state.isShared && state.binId && state.encKey) saveToBin(data);
 }
 function loadData() {
   try {
-    const raw = localStorage.getItem(getStorageKey());
+    let raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (raw) {
+      // 固定键已有数据：旧版遗留键（含 mwi_trial_[object Object] 垃圾）纯属占配额，直接清掉，
+      // 否则 saveData 写入新数据时会因配额满而失败——这正是「刷新后回到旧缓存」的根因。
+      purgeLegacyStorageKeys();
+    } else {
+      // 固定键不存在：迁移内部会先读旧键、删除腾空间、再写固定键。
+      raw = migrateLegacyStorage();
+    }
     if (raw) {
       Object.assign(state, JSON.parse(raw));
       if (!Array.isArray(state.deletedIds)) state.deletedIds = [];
