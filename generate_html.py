@@ -412,10 +412,19 @@ def main():
         print('Equip families [%s]: %d (life=%d)'
               % (_slot, len(_sel), len([_f for _f in _sel if _f['life']])))
 
+    # iconId -> 槽位映射（含 refined 款）：运行时把背包里的战斗装按槽位归类
+    _icon_to_slot = {}
+    for _slot, _icons in categorized.items():
+        for _iid in _icons:
+            _icon_to_slot[_iid] = _slot
+            if _iid.endswith('_refined'):
+                _icon_to_slot[_iid[:-len('_refined')]] = _slot
+
     life_equip_lines = [
         'const EQUIP_FAMILIES = %s;' % json.dumps(_equip_families, ensure_ascii=False),
         'const OWNED_SLOTS = %s;' % json.dumps(_owned_slots, ensure_ascii=False),
         'const HYBRID_SLOTS = %s;' % json.dumps(_hybrid_slots, ensure_ascii=False),
+        'const EQUIP_ICON_TO_SLOT = %s;' % json.dumps(_icon_to_slot, ensure_ascii=False),
     ]
     life_equip_js = '\n'.join(life_equip_lines)
 
